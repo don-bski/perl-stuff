@@ -22,13 +22,10 @@ This program extracts the audio track in an MP4 file and converts it to MP3 usin
 **OS: Linux RPi-3**<br/>
 An advanced model railroad control program for automating things like block occupancy detection, track signaling, turnout positioning, and reverse loop polarity. Uses forked processes and provides a barebones webserver for operational status display. RPi-3 and hardware 'hats' interface the layout sensors, turnout servos, and signal indicators. Trackside searchlight semaphore signals utilize a custom build 74HC595 shift register hat. Hardware schematics and layout details are included. 
 
-### env.pl
+### General
 **OS: Linux and Windows**<br/>
-Displays the %ENV hash environment variables/values that were inherited from the operating system as part of perl program start. 
-
-### bin2hex.pl
-**OS: Linux and Windows**<br/>
-Dumps the specified file contents to the console. Hex and its ASCII equivalent characters are displayed.
+**env.pl** displays the %ENV hash environment variables/values that were inherited from the operating system as part of perl program start.<br/> 
+**bin2hex.pl** dumps the specified file contents to the console. Hex and its ASCII equivalent characters are displayed.<br/>
 
 ### DrawPoker.pl
 **OS: Linux**<br/>
