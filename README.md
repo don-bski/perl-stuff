@@ -27,10 +27,7 @@ An advanced model railroad control program for automating things like block occu
 **env.pl** - Displays the %ENV hash environment variables/values that were inherited from the operating system as part of perl program start.<br/>
 **bin2hex.pl** - Dumps the specified file contents to the console. Hex and its ASCII equivalent characters are displayed.<br/>
 
-### DrawPoker.pl
-**OS: Linux**<br/>
-Proof of concept five card draw poker game. CLI based ANSI color/character cards. Only basic game play is implemented and win/lose checking is incomplete.
-
-### DrawPokerGUI.pl
+### DrawPoker
 **OS: Linux and Windows**<br/>
-Perl-tk version of five card draw poker program. Uses the GD module for image sizing. More code, more graphics, more better. Yeah, perl-tk; but it works.   
+**DrawPoker.pl** - Proof of concept five card draw poker game. Linux CLI based ANSI color/character cards. Only basic game play is implemented and win/lose checking is incomplete.<br/>
+**DrawPokerGUI.pl** - Perl-tk version of five card draw poker program. Auto-selection of a fixed game table size based on screen resolution. Requires the perl GD module for image sizing.  More code, more graphics, more better. Yeah, perl-tk; but it works.<br/>
