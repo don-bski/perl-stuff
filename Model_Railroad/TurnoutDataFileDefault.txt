@@ -1,0 +1,39 @@
+# ===============================================
+# Turnout data file. Loaded during program start.
+# Edited values will be used upon next start. See
+# DnB.pl 'Turnout Related Data' section for more 
+# information.
+# ===============================================
+
+Turnout:01 Pid:0 Addr:65 Port:0 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:02 Pid:0 Addr:65 Port:1 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:03 Pid:0 Addr:65 Port:2 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:04 Pid:0 Addr:65 Port:3 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:05 Pid:0 Addr:65 Port:4 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:06 Pid:0 Addr:65 Port:5 Pos:350 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:07 Pid:0 Addr:65 Port:6 Pos:350 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:08 Pid:0 Addr:65 Port:7 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:09 Pid:0 Addr:65 Port:8 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:10 Pid:0 Addr:65 Port:9 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:11 Pid:0 Addr:65 Port:10 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:12 Pid:0 Addr:65 Port:11 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:13 Pid:0 Addr:65 Port:12 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:14 Pid:0 Addr:65 Port:13 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:15 Pid:0 Addr:65 Port:14 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:16 Pid:0 Addr:65 Port:15 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:17 Pid:0 Addr:66 Port:0 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:18 Pid:0 Addr:66 Port:1 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:19 Pid:0 Addr:66 Port:2 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:20 Pid:0 Addr:66 Port:3 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:21 Pid:0 Addr:66 Port:4 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:22 Pid:0 Addr:66 Port:5 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:23 Pid:0 Addr:66 Port:6 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:24 Pid:0 Addr:66 Port:7 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:25 Pid:0 Addr:66 Port:8 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:26 Pid:0 Addr:66 Port:9 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:27 Pid:0 Addr:66 Port:10 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:28 Pid:0 Addr:66 Port:11 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:29 Pid:0 Addr:66 Port:12 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:30 Pid:0 Addr:66 Port:13 Pos:850 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:0
+Turnout:31 Pid:0 Addr:66 Port:14 Pos:750 Rate:450 Open:450 Middle:600 Close:750 MinPos:300 MaxPos:900 Id:0
+Turnout:32 Pid:0 Addr:66 Port:15 Pos:750 Rate:450 Open:450 Middle:600 Close:750 MinPos:300 MaxPos:900 Id:0

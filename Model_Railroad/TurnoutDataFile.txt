@@ -1,0 +1,38 @@
+# ===============================================
+# Turnout data file. Loaded during program start.
+# Edited values will be used upon next start. See
+# DnB.pl 'Turnout Related Data' section for more 
+# information.
+# ===============================================
+Turnout:01 Pid:0 Addr:65 Port:0 Pos:540 Rate:200 Open:640 Middle:590 Close:540 MinPos:535 MaxPos:645 Id:Mainline turnout T01
+Turnout:02 Pid:0 Addr:65 Port:1 Pos:545 Rate:200 Open:643 Middle:600 Close:545 MinPos:540 MaxPos:648 Id:Mainline turnout T02
+Turnout:03 Pid:0 Addr:65 Port:2 Pos:620 Rate:200 Open:510 Middle:570 Close:620 MinPos:505 MaxPos:625 Id:Mainline turnout T03
+Turnout:04 Pid:0 Addr:65 Port:3 Pos:600 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:spare
+Turnout:05 Pid:0 Addr:65 Port:4 Pos:660 Rate:200 Open:555 Middle:610 Close:660 MinPos:550 MaxPos:665 Id:Mainline turnout T05
+Turnout:06 Pid:0 Addr:65 Port:5 Pos:550 Rate:200 Open:650 Middle:600 Close:550 MinPos:545 MaxPos:655 Id:Mainline turnout T06
+Turnout:07 Pid:0 Addr:65 Port:6 Pos:490 Rate:200 Open:615 Middle:560 Close:462 MinPos:457 MaxPos:620 Id:Mainline turnout T07
+Turnout:08 Pid:0 Addr:65 Port:7 Pos:520 Rate:200 Open:670 Middle:600 Close:520 MinPos:515 MaxPos:675 Id:Yard turnout T08
+Turnout:09 Pid:0 Addr:65 Port:8 Pos:495 Rate:200 Open:495 Middle:570 Close:625 MinPos:490 MaxPos:630 Id:Yard turnout T09
+Turnout:10 Pid:0 Addr:65 Port:9 Pos:675 Rate:200 Open:675 Middle:615 Close:545 MinPos:540 MaxPos:680 Id:Yard turnout T10
+Turnout:11 Pid:0 Addr:65 Port:10 Pos:550 Rate:200 Open:650 Middle:600 Close:550 MinPos:545 MaxPos:655 Id:Yard turnout T11
+Turnout:12 Pid:0 Addr:65 Port:11 Pos:705 Rate:200 Open:570 Middle:620 Close:705 MinPos:565 MaxPos:710 Id:Yard turnout T12
+Turnout:13 Pid:0 Addr:65 Port:12 Pos:655 Rate:200 Open:500 Middle:580 Close:655 MinPos:495 MaxPos:660 Id:Yard turnout T13
+Turnout:14 Pid:0 Addr:65 Port:13 Pos:650 Rate:200 Open:480 Middle:560 Close:650 MinPos:475 MaxPos:655 Id:Yard turnout T14
+Turnout:15 Pid:0 Addr:65 Port:14 Pos:630 Rate:200 Open:480 Middle:550 Close:630 MinPos:475 MaxPos:635 Id:Yard turnout T15
+Turnout:16 Pid:0 Addr:65 Port:15 Pos:705 Rate:200 Open:555 Middle:620 Close:705 MinPos:550 MaxPos:710 Id:Yard turnout T16
+Turnout:17 Pid:0 Addr:66 Port:0 Pos:680 Rate:200 Open:530 Middle:610 Close:680 MinPos:525 MaxPos:685 Id:Yard turnout T17
+Turnout:18 Pid:0 Addr:66 Port:1 Pos:695 Rate:200 Open:550 Middle:620 Close:695 MinPos:545 MaxPos:700 Id:Yard turnout T18
+Turnout:19 Pid:0 Addr:66 Port:2 Pos:540 Rate:200 Open:540 Middle:620 Close:715 MinPos:535 MaxPos:720 Id:Yard turnout T19
+Turnout:20 Pid:0 Addr:66 Port:3 Pos:620 Rate:200 Open:495 Middle:550 Close:620 MinPos:490 MaxPos:625 Id:Yard turnout T20
+Turnout:21 Pid:0 Addr:66 Port:4 Pos:520 Rate:200 Open:670 Middle:600 Close:520 MinPos:515 MaxPos:675 Id:Yard turnout T21
+Turnout:22 Pid:0 Addr:66 Port:5 Pos:595 Rate:200 Open:440 Middle:520 Close:595 MinPos:435 MaxPos:600 Id:Yard turnout T22
+Turnout:23 Pid:0 Addr:66 Port:6 Pos:525 Rate:200 Open:675 Middle:600 Close:525 MinPos:520 MaxPos:680 Id:Yard turnout T23
+Turnout:24 Pid:0 Addr:66 Port:7 Pos:520 Rate:200 Open:670 Middle:600 Close:520 MinPos:515 MaxPos:675 Id:Yard turnout T24
+Turnout:25 Pid:0 Addr:66 Port:8 Pos:490 Rate:200 Open:630 Middle:560 Close:490 MinPos:485 MaxPos:635 Id:Yard turnout T25
+Turnout:26 Pid:0 Addr:66 Port:9 Pos:480 Rate:200 Open:645 Middle:560 Close:480 MinPos:475 MaxPos:650 Id:TT turnout T26
+Turnout:27 Pid:0 Addr:66 Port:10 Pos:670 Rate:200 Open:670 Middle:590 Close:515 MinPos:510 MaxPos:675 Id:TT turnout T27
+Turnout:28 Pid:0 Addr:66 Port:11 Pos:600 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:spare
+Turnout:29 Pid:0 Addr:66 Port:12 Pos:600 Rate:450 Open:350 Middle:600 Close:850 MinPos:300 MaxPos:900 Id:spare
+Turnout:30 Pid:0 Addr:66 Port:13 Pos:520 Rate:75 Open:525 Middle:600 Close:675 MinPos:515 MaxPos:690 Id:Semaphore
+Turnout:31 Pid:0 Addr:66 Port:14 Pos:765 Rate:65 Open:765 Middle:705 Close:635 MinPos:625 MaxPos:775 Id:GC02 Gate 1 (near)
+Turnout:32 Pid:0 Addr:66 Port:15 Pos:490 Rate:65 Open:490 Middle:555 Close:620 MinPos:480 MaxPos:630 Id:GC02 Gate 2 (far)
