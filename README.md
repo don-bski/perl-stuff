@@ -10,9 +10,17 @@ This program is used to send and receive data with WLED using its json api inter
 **OS: Windows**<br/>
 This program was written to load MP3 files to an older USB SanDisk MP3 player. By erasing and reloading all MP3 files on the player each time, it ensures alphabetical ordering when the SanDisk 'Folder' selection is used. The -p option creates a playlist in each folder for files with a .mp3 extention.
 
+### WallpaperChange.pl
+**OS: Linux**<br/>
+A program written for the RPi4 that is used to change the desktop image (wallpaper) using linux pcmanfm. It can also keep the screen display active by using xdotool, if available, to perform a periodic mouse pointer movement in the corner of the screen. One or more picture directories are specified on the startup CLI.
+
 ### Mp4ToMp3.pl
 **OS: Windows**<br/>
 This program extracts the audio track in an MP4 file and converts it to MP3 using ffmpeg. The audio level can be normalized. A seperate install of ffmpeg is needed if not already part of another windows program. Change the $FFmpeg definition in the program to point to the ffmpeg executable.
+
+### DnB Model Railroad
+**OS: Linux RPi-3**<br/>
+An advanced model railroad control program for automating things like block occupancy detection, track signaling, turnout positioning, and reverse loop polarity. Uses forked processes and provides a barebones webserver for operational status display. RPi-3 and hardware 'hats' interface the layout sensors, turnout servos, and signal indicators. Trackside searchlight semaphore signals utilize a custom build 74HC595 shift register hat. Hardware schematics and layout details are included. 
 
 ### env.pl
 **OS: Linux and Windows**<br/>
@@ -22,10 +30,6 @@ Displays the %ENV hash environment variables/values that were inherited from the
 **OS: Linux and Windows**<br/>
 Dumps the specified file contents to the console. Hex and its ASCII equivalent characters are displayed.
 
-### WallpaperChange.pl
-**OS: Linux**<br/>
-A program written for the RPi4 that is used to change the desktop image (wallpaper) using linux pcmanfm. It can also keep the screen display active by using xdotool, if available, to perform a periodic mouse pointer movement in the corner of the screen. One or more picture directories are specified on the startup CLI.
-
 ### DrawPoker.pl
 **OS: Linux**<br/>
 Proof of concept five card draw poker game. CLI based ANSI color/character cards. Only basic game play is implemented and win/lose checking is incomplete.
@@ -33,7 +37,3 @@ Proof of concept five card draw poker game. CLI based ANSI color/character cards
 ### DrawPokerGUI.pl
 **OS: Linux and Windows**<br/>
 Perl-tk version of five card draw poker program. Uses the GD module for image sizing. More code, more graphics, more better. Yeah, perl-tk; but it works.   
-
-### DnB Model Railroad
-**OS: Linux RPi-3**<br/>
-An advanced model railroad control program for automating things like block occupancy detection, track signaling, turnout positioning, and reverse loop polarity. Uses forked processes and provides a barebones webserver for operational status display. RPi-3 and hardware 'hats' interface the layout sensors, turnout servos, and signal indicators. Trackside searchlight semaphore signals utilize a custom build 74HC595 shift register hat. Hardware schematics and layout details are included. 
