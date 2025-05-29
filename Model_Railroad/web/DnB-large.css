@@ -1,0 +1,506 @@
+/* ======================================================================== */
+/* This file contains CSS definitions for the D&B Model Railroad webserver  */
+/* interface. This file is used for screen heights greater than 800 pixels. */
+/* Last update: 10-09-2020                                                  */
+/* ======================================================================== */
+
+/* Common CSS */
+:root {
+  --d-back-color: #E4DFFF;
+  --b-back-color: #B3DBF5;
+  --shadow-color: #A0A0A0;
+  --line-color: #A0A0A0;
+  --active-color: #0000D0;
+  --idle-color: steelblue;
+}
+.Blu { color: #0000D0; font-weight: bold; }
+.blu { color: steelblue; }
+.grayout { opacity: 0.4; }
+.red { color:#E01010; font-weight: bold; }
+.yel { color:#FFAA00; font-weight: bold; }
+.grn { color:#00DC00; font-weight: bold; }
+
+body {
+  font-family: Arial, Helvetica, Sans-serif;
+  font-size: 16px;
+}
+
+div#ImageContainer {
+  width: 100%;
+}
+
+.navGroup {
+  margin-left: 80px;
+  width: 464px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 6px;
+  text-align: center;
+  box-shadow: 1px 3px 5px var(--shadow-color);
+  background-color: var(--b-back-color);
+  font-size: 14px;
+}
+.navButton {
+  padding: 3px 1px;
+  text-align: center;
+  letter-spacing: 1px;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px; 
+  cursor: pointer;
+  border-radius: 4px;
+  width: 60px;
+}
+.navTable { }
+.navTable th, .navTable td {
+  padding: 3px;
+  text-align: center;
+}
+
+/* =============== */
+/* # Top page CSS. */
+/* =============== */
+.TopTitle {
+  margin-left: 50px;
+  text-align: center;
+  width: 550px;
+}
+
+.TopImage {
+  margin-left: 25px;
+  max-width: 100%;
+  display: block;
+}
+   
+p.copy {
+  margin-left: 80px;
+  font-size: .75em; 
+  text-align: left;
+}
+
+/* ======================== */
+/* Block detector page CSS. */
+/* ======================== */
+.BlockTitle {
+  margin-left: 50px;
+  text-align: center;
+  width: 550px;
+}
+
+.BlockSnap {
+  font-size: .9em; 
+}
+   
+.Block {
+  border-collapse: collapse; 
+  text-align: left;
+  width: 550px;
+}
+   
+.Block th, .Block td {
+  padding: 4px;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.BlockBack {
+  margin-left: 46px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 12px 5px 15px 12px;
+  background-color: var(--d-back-color);
+  box-shadow: 1px 3px 6px var(--shadow-color);
+  width: 560px;
+}
+
+/* ======================== */
+/* Grade Crossing page CSS. */   
+/* ======================== */
+.GradeTitle {
+  margin-left: 50px;
+  text-align: center;
+  width: 500px;
+}
+
+.GradeSnap { 
+  margin-left: 180px;
+  font-size: .9em; 
+}
+
+.GradeData {
+  margin-left: 60px;
+  width: 230px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 4px;
+  background-color: var(--d-back-color);
+  box-shadow: 1px 3px 8px var(--shadow-color);
+}
+
+.GradeImage {
+  margin-left: 60px;
+  max-width: 100%;
+  display: block;
+}
+
+/* ================ */
+/* Sensor page CSS. */
+/* ================ */
+.SensorTitle {
+  margin-left: 45px;
+  text-align: center;
+  width: 550px;
+}
+
+.SensorSnap {
+  font-size: .9em; 
+}
+   
+.Sensor {
+  border-collapse: collapse; 
+  text-align: left;
+  width: 550px;
+}
+   
+.Sensor th, .Sensor td {
+  padding: 4px;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.SensorBack {
+  margin-left: 40px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 12px 5px 15px 12px;
+  background-color: var(--d-back-color);
+  box-shadow: 1px 3px 6px var(--shadow-color);
+  width: 560px;
+}
+
+/* ================ */
+/* Signal page CSS. */
+/* ================ */
+.SignalTitle {
+  margin-left: 55px;
+  text-align: center;
+  width: 550px;
+}
+
+.SignalSnap {
+  font-size: .9em; 
+}
+   
+.Signal {
+  border-collapse: collapse; 
+  text-align: left;
+  width: 550px;
+}
+   
+.Signal th, .Signal td {
+  padding: 4px;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.SignalBack {
+  margin-left: 45px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 10px 5px 10px 12px;
+  background-color: var(--d-back-color);
+  box-shadow: 1px 3px 6px var(--shadow-color);
+  width: 560px;
+}
+
+/* ================= */
+/* Turnout page CSS. */
+/* ================= */
+.TurnoutTitle {
+  margin-left: 60px;
+  text-align: center;
+  width: 550px;
+}
+
+.TurnoutSnap {
+  font-size: .9em; 
+}
+   
+.Turnout {
+  border-collapse: collapse; 
+  text-align: left;
+  width: 520px;
+}
+   
+.Turnout th, .Turnout td {
+  padding: 4px;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.TurnoutBack {
+  margin-left: 50px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 12px 5px 15px 12px;
+  background-color: var(--d-back-color);
+  box-shadow: 1px 3px 6px var(--shadow-color);
+  width: 532px;
+}
+
+/* ======================= */
+/* Mainline live page CSS. */
+/* ======================= */
+.MainLiveTitle {
+  margin-left: 20px;
+  text-align: center;
+  width: 550px;
+}
+      
+.MainBackImage {
+  position: absolute;
+  z-index: 0;
+  top: 80px;
+  left: 50px;
+  width: 540px;
+  height: 860px;
+  display: block;
+}
+      
+.yardImage {
+  position: absolute;
+  z-index: 1;
+  top: 80px;
+  left: 50px;
+  width: 540px;
+  height: 292px;
+}
+      
+.midwayImage {
+  position: absolute;
+  z-index: 1;
+  top: 372px;
+  left: 50px;
+  width: 540px;
+  height: 276px;
+}
+      
+.holdoverImage {
+  position: absolute;
+  z-index: 1;
+  top: 648px;
+  left: 50px;
+  width: 540px;
+  height: 292px;
+}
+
+.navGroupLiveMain {
+  position: absolute;
+  z-index: 0;
+  top: 970px;
+  left: 80px;
+  width: 464px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 6px;
+  text-align: center;
+  box-shadow: 1px 3px 5px var(--shadow-color);
+  background-color: var(--b-back-color);
+  font-size: 14px;
+}
+
+.navGroupLiveYard {
+  position: absolute;
+  z-index: 0;
+  top: 720px;
+  left: 215px;
+  width: 464px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 6px;
+  text-align: center;
+  box-shadow: 1px 3px 5px var(--shadow-color);
+  background-color: var(--b-back-color);
+  font-size: 14px;
+}
+
+.LiveEndPad {
+  position: absolute;
+  z-index: 0;
+  top: 1070px;
+  left: 50px;
+  width: 540px;
+}
+
+.L01color {
+  position: absolute;
+  z-index: 2;
+  top: 849px;
+  left: 391px;
+}
+
+.L02color {
+  position: absolute;
+  z-index: 2;
+  top: 471px;
+  left: 508px;
+}
+
+.L03color {
+  position: absolute;
+  z-index: 2;
+  top: 427px;
+  left: 401px;
+}
+
+.L04color {
+  position: absolute;
+  z-index: 2;
+  top: 427px;
+  left: 205px;
+}
+
+.L05color {
+  position: absolute;
+  z-index: 2;
+  top: 591px;
+  left: 401px;
+}
+
+.L06color {
+  position: absolute;
+  z-index: 2;
+  top: 591px;
+  left: 205px;
+}
+
+.L07color {
+  position: absolute;
+  z-index: 2;
+  top: 549px;
+  left: 89px;
+}
+
+.L08color {
+  position: absolute;
+  z-index: 2;
+  top: 163px;
+  left: 90px;
+}
+
+.L09color {
+  position: absolute;
+  z-index: 2;
+  top: 129px;
+  left: 222px;
+}
+
+.L10color {
+  position: absolute;
+  z-index: 2;
+  top: 129px;
+  left: 393px;
+}
+
+.L11color {
+  position: absolute;
+  z-index: 2;
+  top: 274px;
+  left: 222px;
+}
+
+.L12color {
+  position: absolute;
+  z-index: 2;
+  top: 275px;
+  left: 393px;
+}
+
+.GC01Image {
+  position: absolute;
+  z-index: 3;
+  top: 60px;
+  left: 390px;
+}
+
+.GC02Image {
+  position: absolute;
+  z-index: 3;
+  top: 334px;
+  left: 390px;
+}
+
+/* =================== */
+/* Yard live page CSS. */
+/* =================== */
+.YardLiveTitle {
+  margin-left: 170px;
+  text-align: center;
+  width: 550px;
+}
+      
+.YardBackImage {
+  position: absolute;
+  z-index: 0;
+  top: 80px;
+  left: 30px;
+  width: 850px;
+  height: 600px;
+  display: block;
+}
+      
+.Yard-S1 {
+  position: absolute;
+  z-index: 1;
+  top: 80px;
+  left: 30px;
+  width: 850px;
+  height: 600px;
+  display: block;
+}
+      
+.Yard-S2 {
+  position: absolute;
+  z-index: 2;
+  top: 80px;
+  left: 30px;
+  width: 850px;
+  height: 600px;
+  display: block;
+}
+      
+.Yard-S3 {
+  position: absolute;
+  z-index: 3;
+  top: 80px;
+  left: 30px;
+  width: 850px;
+  height: 600px;
+  display: block;
+}
+      
+.Yard-S4 {
+  position: absolute;
+  z-index: 4;
+  top: 80px;
+  left: 30px;
+  width: 850px;
+  height: 600px;
+  display: block;
+}
+      
+.Yard-S5 {
+  position: absolute;
+  z-index: 5;
+  top: 80px;
+  left: 30px;
+  width: 850px;
+  height: 600px;
+  display: block;
+}
+      
+.Yard-S6 {
+  position: absolute;
+  z-index: 6;
+  top: 80px;
+  left: 30px;
+  width: 850px;
+  height: 600px;
+  display: block;
+}
