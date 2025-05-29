@@ -4,5 +4,5 @@
 Available functions include backup and restore of WLED user settings (configuration, presets, custom 
 palettes), an interactive preset audition function, and a preset data reformatter. The reformat function
 only arranges and selectively indents the preset data to simplify text editing of a preset backup file. 
-The desired function is specified using one of the program's CLI options. Useful in cases where the normal 
-WLED application is not available.
+The desired function is specified using one of the program's CLI options. This tool is useful in cases 
+where the normal WLED application is not available.
