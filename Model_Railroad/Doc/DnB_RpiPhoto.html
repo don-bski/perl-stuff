@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<HTML>
+  <HEAD>
+    <TITLE>D&amp;B RPi Photos</TITLE>
+    <LINK REL="shortcut icon" HREF="http://www.buczynski.com/favicon.ico">
+    <META NAME="robots" CONTENT="INDEX">
+    <META NAME="author" CONTENT="Don Buczynski">
+    <META NAME="keywords" CONTENT="perl,raspberry pi,rpi,model railroad,DCC,HO scale,train,trains,
+      Basic Stamp,BS2,Propeller,Parallax,Digitrax">
+    <META NAME="description" CONTENT="This page contains Raspberry Pi electronics details 
+      for the D&amp;B model railroad.">   
+  </HEAD>
+
+  <BODY BACKGROUND="blegtext.gif" BGCOLOR="#CCCCCC" TEXT="#000000">
+    <CENTER>
+    <TABLE ALIGN=CENTER BORDER=1 WIDTH=50% BGCOLOR="#D0D0D0" BORDERCOLORLIGHT="#999999"
+      BORDERCOLORDARK="#000000">
+      <TR>
+        <TD BGCOLOR="#AFDCFF">
+          <P ALIGN="center"><FONT SIZE=+3 FACE="Arial"><B>D&amp;B RPi Photos</B></FONT></p>
+        </TD>
+      </TR>
+    </TABLE></CENTER><BR><BR><BR>
+
+    <BLOCKQUOTE>
+      <BLOCKQUOTE>
+        <p><font face="Arial"><b>10-27-2018:</b> Motherboard connector layout planning. </font></p>
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <IMG SRC=Rpi_mb-2.jpg ALT="Rpi_mb-2.jpg" width="1000" height="666">
+   	  </TABLE></CENTER><BR>
+
+        <p><font face="Arial"><b>2-02-2019:</b> Block detector circuits wired and tested. Point-to-point 
+        soldered connections using 30 AWG wire wrapping wire. Placing a 1K resistor across the 
+        rails yields about 4.1 volt signal level at PP1 Bus1 connector.</font></p>
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <IMG SRC=BlockDet-01-1.jpg ALT="BlockDet-01-1.jpg" width="650" height="521">
+  	  </TABLE></CENTER><br>
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <IMG SRC=BlockDet-02-1.jpg ALT="BlockDet-02-1.jpg" width="645" height="471">
+  	  </TABLE></CENTER><BR>
+
+        <p><font face="Arial"><b>5-09-2019:</b> Crossing gate to servo mechanical connection.</font></p>
+
+        <p><font face="Arial">A servo clevis is attached to the existing gate pushrod wires using a 1/8 inch collar. The clevis is also 
+        1/8 inch at its base so a shallow grove must be filed in the clevis to allow the collar and wire to slip on. This design simplifies 
+        gate position adjustments once the servos are mounted.</font></p>
+
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-gate-1.jpg ALT="rpi-gate-1.jpg" width="600" height="500"></td>
+           <td><IMG SRC=rpi-gate-2.jpg ALT="rpi-gate-2.jpg" width="600" height="500"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+	  <p><font face="Arial">Despite their small size, the servos are powerful enough to possibly cause gate damage 
+	  if erroneously positioned. In addition to not over tightening the collar set screws, the servos should be 
+	  loosely mounted to the layout frame allowing them to twist if a gate mechanical limit is encountered. This is 
+	  easily accomplished by using small hooks and a metal spring. If the servo shifts position during normal operation,
+	  glue a small piece of 100 or 120 grit sandpaper where the layout frame contacts the servo.</font></p>
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-gate-3.jpg ALT="rpi-gate-3.jpg" width="600" height="500"></td>
+           <td><IMG SRC=rpi-gate-4.jpg ALT="rpi-gate-4.jpg" width="600" height="500"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+      <font face="Arial">
+      <table border="0" width="80%"
+	    <tr valign="top"><td width="5%"</td><td width="95%"></td></tr>
+        <tr valign="top"><td colspan="2" align="left"><b>Grade crossing gate servo mechanical adjustment procedure.</b></td></tr>
+		<tr></tr>
+        <tr valign="top"><td colspan="2" align="left">If the servo has been disconnected from the gate pushrod, begin at step 1. Otherwise, begin at step 8.</td></tr>
+		<tr></tr>
+        <tr valign="top">
+          <td width="5%" align="center">1.</td>
+          <td width="95%" align="left"><font face="Arial">Verify clevis attachment to inner hole of servo arm. Clevis should move freely but have a snug fit. Lubricate if needed using dry graphite (door lock lubricant).</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">2.</td>
+          <td width="95%" align="left"><font face="Arial">Join the gate pushrod, collar, and servo clevis. Leave collar setscrew loose so pushrod wire can easily slide.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">3.</td>
+          <td width="95%" align="left"><font face="Arial">Disconnect the 3 pin servo cable from the external board.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">4.</td>
+          <td width="95%" align="left"><font face="Arial">Edit TurnoutDataFile.txt. Set Open, Middle, and Close values for the gate servo to 595, 600, and 605 respectively.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">5.</td>
+          <td width="95%" align="left"><font face="Arial">In RPi console, enter <b>DnB.pl -m x</b> (x is servo number) to set gate servo to the middle position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">6.</td>
+          <td width="95%" align="left"><font face="Arial">Connect the 3 pin servo cable to the external board. The servo will move to the middle position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">7.</td>
+          <td width="95%" align="left"><font face="Arial">Manually move the signal gate to mid position. Then tighten the collar setscrew to attach the gate pushrod to the servo clevis.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">8.</td>
+          <td width="95%" align="left"><font face="Arial">Enter <b>DnB.pl -c x</b> console command to set gate servo to the Close position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">9.</td>
+          <td width="95%" align="left"><font face="Arial">Note gate position and change value in TurnoutDataFile.txt in small increments to achieve desired gate lowered position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">10.</td>
+          <td width="95%" align="left"><font face="Arial">Enter <b>DnB.pl -o x</b> console command to set gate servo to the Open position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">11.</td>
+          <td width="95%" align="left"><font face="Arial">Note gate position and change value in TurnoutDataFile.txt in small increments to achieve desired gate raised position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">12.</td>
+          <td width="95%" align="left"><font face="Arial">Repeat for the second gate servo.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">13.</td>
+          <td width="95%" align="left"><font face="Arial">In RPi console, enter <b>DnB.pl -g2</b> to run test and verify desired gate operation. Some dry graphite lubrication inside the pushrod guide tube will help smooth out the movement.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">14.</td>
+          <td width="95%" align="left"><font face="Arial">Edit TurnoutDataFile.txt. For the gate servos, set the MinPos and MaxPos values to the appropriate Open and Close value. This will help prevent erroneous servo positioning beyond a physical limit which could possibly damage the gates.</td>
+        </tr>
+      </table>
+	  </font><br>
+
+	  <p><font face="Arial">Off the shelf (Amazon) wiring boards that are mounted external to the main board at grade 
+	  crossing locations. Combines connections for signal LEDs, IR sensors, speaker, and gate servos.</font></p>
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-gate-5.jpg ALT="rpi-gate-5.jpg" width="600" height="500"></td>
+           <td><IMG SRC=rpi-gate-6.jpg ALT="rpi-gate-6.jpg" width="600" height="500"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+      <font face="Arial">
+      <table border="0" width="80%"
+	    <tr valign="top"><td width="5%"</td><td width="95%"></td></tr>
+        <tr valign="top"><td colspan="2" align="left"><b>Grade crossing signal lamp connection procedure.</b></td></tr>
+        <tr valign="top">
+          <td width="5%" align="center">1.</td>
+          <td width="95%" align="left"><font face="Arial">Attach a female pin connector to each (5) grade crossing signal LED wire.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">2.</td>
+          <td width="95%" align="left"><font face="Arial">Ensure proper attachment of external board to mainboard via 6 pin cables.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">3.</td>
+          <td width="95%" align="left"><font face="Arial">In RPi console, enter <b>DnB.pl -g1</b> to run grade crossing test.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">4.</td>
+          <td width="95%" align="left"><font face="Arial">Connect signal LED common to external board lamp header pin 1.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">5.</td>
+          <td width="95%" align="left"><font face="Arial">Attach LED wire to pin 2 of lamp header. Note flashing lamp.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">6.</td>
+          <td width="95%" align="left"><font face="Arial">Attach in turn the remaining LED wires to the lamp pin header to achieve desired alternating lamp pattern.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">7.</td>
+          <td width="95%" align="left"><font face="Arial">Repeat steps 4 through 6 for second signal.</td>
+        </tr>
+      </table>
+	  </font>
+
+	  <p><font face="Arial"><b>Grade crossing operation YouTube clips:</b> &nbsp;
+	    <A HREF="./GC1_Test.mp4">Grade Crossing 1</A>
+	    &nbsp; &nbsp; 
+	    <A HREF="./GC2_Test.mp4">Grade Crossing 2</A>
+ 	  </font><br><br>
+
+	  <p><font face="Arial"><b>5-20-2019:</b> Mainboard with all wiring and components.</font></p>
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-MainBd-1-150.jpg ALT="rpi-MainBd-1-150.jpg" width="1000" height="750"></td>
+        </tr>
+  	    </TABLE></CENTER>
+        <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-MainBd-3-150.jpg ALT="rpi-MainBd-3-150.jpg" width="1000" height="691"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+	  <p><font face="Arial"><b>6-01-2019:</b> Semaphore to servo mechanical connection.</font></p>
+
+      <p><font face="Arial">In a manner similar to the grade crossing gates, a clevis is used to attach the semaphore flag pushrod wire to the 
+      servo.</font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-semaphore-1.jpg ALT="rpi-semaphore-1.jpg" width="600" height="500"></td>
+           <td><IMG SRC=rpi-semaphore-2.jpg ALT="rpi-semaphore-2.jpg" width="600" height="500"></td> 
+		</tr>
+  	  </TABLE></CENTER><br>
+
+      <font face="Arial">
+      <table border="0" width="80%"
+	    <tr valign="top"><td width="5%"</td><td width="95%"></td></tr>
+        <tr valign="top"><td colspan="2" align="left"><b>Semaphore flag board servo mechanical adjustment procedure.</b></td></tr>
+		<tr></tr>
+        <tr valign="top"><td colspan="2" align="left">If the servo has been disconnected from the pushrod, begin at step 1. Otherwise, begin at step 8.</td></tr>
+		<tr></tr>
+        <tr valign="top">
+          <td width="5%" align="center">1.</td>
+          <td width="95%" align="left"><font face="Arial">Verify clevis attachment to inner hole of servo arm. Clevis should move freely but have a snug fit. Lubricate if needed using dry graphite (door lock lubricant).</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">2.</td>
+          <td width="95%" align="left"><font face="Arial">Join the pushrod, collar, and servo clevis. Leave collar setscrew loose so pushrod wire can easily slide.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">3.</td>
+          <td width="95%" align="left"><font face="Arial">Disconnect the 3 pin servo cable from the external board.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">4.</td>
+          <td width="95%" align="left"><font face="Arial">Edit TurnoutDataFile.txt. For the semaphore servo, set the Open, Middle, and Close values to 595, 600, and 605 respectively.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">5.</td>
+          <td width="95%" align="left"><font face="Arial">In RPi console, enter <b>DnB.pl -m x</b> (x is servo number) to set the semaphore servo to its middle position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">6.</td>
+          <td width="95%" align="left"><font face="Arial">Connect the 3 pin servo cable to the external board. The servo will move to the middle position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">7.</td>
+          <td width="95%" align="left"><font face="Arial">Manually move semaphore flag board to yellow (mid) position. Then tighten the collar setscrew to attach the pushrod to the servo clevis.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">8.</td>
+          <td width="95%" align="left"><font face="Arial">Enter <b>DnB.pl -c x</b> console command to set semaphore servo to the Close (Red) position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">9.</td>
+          <td width="95%" align="left"><font face="Arial">Note flag board position and change value in TurnoutDataFile.txt in small increments to achieve desired red position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">10.</td>
+          <td width="95%" align="left"><font face="Arial">Enter <b>DnB.pl -o x</b> console command to set semaphore servo to the Open (Green) position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">11.</td>
+          <td width="95%" align="left"><font face="Arial">Note flag board position and change value in TurnoutDataFile.txt in small increments to achieve desired green position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">12.</td>
+          <td width="95%" align="left"><font face="Arial">In RPi console, enter <b>DnB.pl -s x</b> (x is signal number) to run test and verify semaphore operation. The semaphore can be positioned to each color using '<b>DnB.pl -s Grn:x</b>', '<b>DnB.pl -s Yel:x</b>', '<b>DnB.pl -s Red:x</b>', or '<b>DnB.pl -s Off:x</b>'</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">13.</td>
+          <td width="95%" align="left"><font face="Arial">Edit TurnoutDataFile.txt. For the semaphore servo, set the MinPos and MaxPos values to the appropriate Open and Close value. This will help prevent erroneous servo positioning beyond a physical limit which could possibly damage the semaphore.</td>
+        </tr>
+  	  </TABLE></CENTER>
+
+	  <p><font face="Arial"><b>Semaphore operation YouTube clip:</b> &nbsp;
+	    <A HREF="./Semaphore_Test.mp4">Semaphore clip</A>
+ 	  </font><br><br>
+
+	  <p><font face="Arial"><b>6-03-2019:</b> Turnout to servo mechanical connection.</font></p>
+	  
+	  <p><font face="Arial">A piece of 1/2 inch aluminum C channel, about 2 1/4 inches long, is used to attach the SG90 servo to the underside of the track 
+	  board. Holes slightly larger than the mounting screws are drilled to permit some lateral positioning of the C channel. A hole is drilled near the 
+	  opposite end of the C channel to permit passage of the piano wire actuating rod, #60 for .031 inch (.8 mm) piano wire. The #60 hole must be elongated slightly to 
+	  permit free wire tilt when moved left/right by the servo. The servo mounting tab is removed flush with the servo case allowing a piece of Scotch 
+	  Permanent Mounting square (111-LRG) to hold the servo in place.</font></p>
+	     
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-servo-1.jpg ALT="rpi-servo-1.jpg" width="600" height="500"></td>
+           <td><IMG SRC=rpi-servo-2.jpg ALT="rpi-servo-2.jpg" width="600" height="500"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+	  <p><font face="Arial">A measuring tool was devised to assist with C channel placement, determination of actuating rod length, and location of the 
+	  Z bend. With the points roughly centered between the rails, the measuring tool wire is passed down through the hole in the turnout throw bar and 
+	  temporarily secured with tape. The C channel/servo is then held in place with the tool wire passing through the #60 hole. Once satisfactorily 
+	  squared up, marks through the C channel mounting holes can be made on the underside of the track board for mounting screw pilot holes. A small 
+	  mark is also made on the tool wire for the Z bend location. The tool wire is then used to measure, cut, and bend a piece of piano wire into the 
+	  actuating rod for the turnout location.</font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+        <tr>
+           <td><IMG SRC=rpi-servo-4.jpg ALT="rpi-servo-4.jpg" width="1220" height="500"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+      <font face="Arial">
+      <table border="0" width="90%"
+	    <tr valign="top"><td width="5%"</td><td width="95%"></td></tr>
+        <tr valign="top"><td colspan="2" align="left"><b>Turnout servo mechanical adjustment procedure.</b></td></tr>
+        <tr valign="top">
+          <td width="5%" align="center">1.</td>
+          <td width="95%" align="left"><font face="Arial">Ensure servo/C channel is mounted snug (not tight) to track board. This allows for some twist positioning of the turnout middle position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">2.</td>
+          <td width="95%" align="left"><font face="Arial">Temporarily remove the servo horn from the servo drive shaft.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">3.</td>
+          <td width="95%" align="left"><font face="Arial">Edit TurnoutDataFile.txt. For the turnout servo, set Open, Middle, and Close values to 550, 600, and 650 respectively.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">4.</td>
+          <td width="95%" align="left"><font face="Arial">In RPi console, enter <b>DnB.pl -m x</b> (x is servo number) to set the turnout servo to its middle position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">5.</td>
+          <td width="95%" align="left"><font face="Arial">Connect the 3 pin servo cable to the main board. The servo will move to the middle position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">6.</td>
+          <td width="95%" align="left"><font face="Arial">Press the servo horn onto the servo drive shaft as shown in the image. That is, pointing away from the track board. If the spline prevents optimal horn placement, change Middle value by 10 (step 3) and re-enter command (step 4). Repeat as necessary. Servo horn securing screw will be re-attached later.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">7.</td>
+          <td width="95%" align="left"><font face="Arial">Twist C channel if necessary to approximately center the points between the outer rails. Then tighten C channel mounting screws.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">8.</td>
+          <td width="95%" align="left"><font face="Arial">If the Middle value was changed in step 6, edit the TurnoutDataFile.txt and change the Open/Close values to +/- 50 steps from the new Middle position value.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">9.</td>
+          <td width="95%" align="left"><font face="Arial">Enter <b>DnB.pl -c x</b> console command to set the turnout servo to the Close position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">10.</td>
+          <td width="95%" align="left"><font face="Arial">Note turnout point position and change the turnout's Close value (step 3) by a small amount until the proper turnout point <u>lightly</u> touches the fixed rail. Perform step 9 after each value change. It may be necessary to swap the turnout Open/Close values in TurnoutDataFile.txt to achieve proper direction of motion.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">11.</td>
+          <td width="95%" align="left"><font face="Arial">Enter <b>DnB.pl -o x</b> console command to set the turnout servo to the Open position.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">12.</td>
+          <td width="95%" align="left"><font face="Arial">Note turnout point position and change the turnout Open value in TurnoutDataFile.txt by a small amount until the proper turnout point <u>lightly</u> touches the fixed rail. Perform step 11 after each value change.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">13.</td>
+          <td width="95%" align="left"><font face="Arial">In RPi console, enter <b>DnB.pl -t x</b> (x is turnout number) to run test and verify turnout operation. The turnout can also be positioned using '<b>DnB.pl -t open:x</b>', '<b>DnB.pl -t middle:x</b>', or '<b>DnB.pl -t close:x</b>'</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">14.</td>
+          <td width="95%" align="left"><font face="Arial">With the servo in the Middle position, disconnect the 3 pin servo cable. Carefully re-attach servo horn securing screw. Then reconnect the 3 pin servo cable.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">15.</td>
+          <td width="95%" align="left"><font face="Arial">Edit TurnoutDataFile.txt. For the turnout servo, set the MinPos and MaxPos values to the appropriate Open and Close values. This will help prevent erroneous servo positioning beyond a physical limit which could possibly damage the turnout.</td>
+        </tr>
+        <tr valign="top">
+          <td width="5%" align="center">16.</td>
+          <td width="95%" align="left"><font face="Arial">Once the turnout is operating properly, the turnout values in TurnoutDataFile.txt should be entered into the %TurnoutData hash of your DnB.pl file. This ensures that the proper turnout position values will be regenerated if the DnB.pl <b>-f</b> option is used.</td>
+        </tr>
+  	  </TABLE></CENTER>
+
+	  <p><font face="Arial"><b>Turnout operation YouTube clips:</b> &nbsp;
+	    <A HREF="./T08_Test.mp4">Turnout T08</A>
+	    &nbsp; &nbsp; 
+	    <A HREF="./T01andT03_Test.mp4">Turnouts T01 and T03</A>
+ 	  </font><br><br>
+
+	  <p><font face="Arial"><b>6-18-2019:</b> Conversion of Atlas undertable switch machine to servo drive, including associated wiring 
+	  changes, is complete. All turnout servos are mechanically mounted and their associated open/close position values set for proper 
+	  turnout point positions. Turnouts are operational using test code. Yard trackage diagram created with open source 
+	  Inkscape <i>Draw Freely</i> program.</font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=90%>
+        <tr>
+           <td><IMG SRC=Rpi-YardTurnouts.jpg ALT="Rpi-YardTurnouts.jpg" width="600" height="350"></td>
+           <td><IMG border="1" SRC=Rpi-YardDiagram-200.jpg ALT="Rpi-YardDiagram-200.jpg" height="350"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+	  <p><font face="Arial"><b>6-19-2019:</b> RPi mainboard and associated layout wiring complete. Time to start debugging the
+	  operational code.</font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=90%>
+        <tr>
+           <td><IMG SRC=Rpi-TrainControl-3.jpg ALT="Rpi-TrainControl-3.jpg" width="600" height="400"></td>
+           <td><IMG SRC=Rpi-TrainControl-1.jpg ALT="Rpi-TrainControl-1.jpg" width="600" height="400"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+	  <p><font face="Arial"><b>7-23-2019:</b> Needed to replace the crossbuck decal on one of the Tomar grade crossing
+	  signals. Unable to find suitable decals so the Inkscape <i>Draw Freely</i>
+	  program was used to create some. Inkscape SVG and 600 dpi PNG files are here: <a href="rpi-crossbuck.zip">
+	  rpi-crossbuck.zip</a>. An inkjet printer, Testors decal paper (white) and Testors fixative will be used. The 
+	  grey background in the images is for visualization. The source files have a transparent background.</font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=90%>
+        <tr>
+           <td><IMG border="1" SRC=Rpi-Crossbuck-1.jpg ALT="Rpi-Crossbuck-1.jpg" width="428" height="550"></td>
+           <td><IMG border="1" SRC=Rpi-Crossbuck-2.jpg ALT="Rpi-Crossbuck-2.jpg" width="428" height="550"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+	  <p><font face="Arial"><b>8-08-2020:</b> To help compensate for layout benchwork thermal expansion/contraction that
+	  affects gate and semaphore positioning, an ambient temperature sensor made by SunFounder, the DS18B20 Temperature 
+     Sensor, was added to the control electronics. The sensor cable is electrically attached to the RPi 40 pin connector
+     on the 74HC595 shift register board pins 2 (5v), 6 (Gnd), and 7 (GPIO4). The sensor board is loosely located in 
+     the J1 ribbon cable fold.</font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=90%>
+        <tr>
+           <td><IMG border="1" SRC=Rpi-TempSensor.jpg ALT="Rpi-TempSensor.jpg" width="600" height="400"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+	  <p><font face="Arial"><b>9-15-2020:</b> Some screen captures of the web browser based read-only interface. The 
+	  locomotive and wig-wag crossing signal are animated GIF images. Perl code dynamically creates the HTML for the 
+	  tables based on current layout operational values. The Live page uses a background track plan image that is 
+	  overlayed by transparent images. Each overlay colors its associated track block/signal based on current layout 
+	  operational values.<font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=70%>
+        <tr>
+           <td><IMG border="1" SRC=Rpi-HomePage.png ALT="Rpi-HomePage.png" width="436" height="454"></td>
+           <td><IMG border="1" SRC=Rpi-BlockPage.png ALT="Rpi-BlockPage.png" width="479" height="467"></td>
+		</tr>
+        <tr>
+           <td><IMG border="1" SRC=Rpi-GradeCrossingPage.png ALT="Rpi-GradeCrossingPage.png" width="435" height="573"></td>
+           <td><IMG border="1" SRC=Rpi-SignalPage.png ALT="Rpi-SignalPage.png" width="472" height="488"></td>
+		</tr>
+        <tr>
+           <td><IMG border="1" SRC=Rpi-TurnoutPage.png ALT="Rpi-TurnoutPage.png" width="464" height="878"></td>
+           <td><IMG border="1" SRC=Rpi-LivePage.png ALT="Rpi-LivePage.png" width="448" height="828"></td>
+		</tr>
+  	  </TABLE></CENTER><br>
+
+	  <p><font face="Arial"><b>10-13-2020:</b> Screen capture of web browser Yard Live web page. The current turnout
+	  lined track routes are shown in red.<font></p>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=70%>
+        <tr>
+           <td><IMG border="1" SRC=Rpi-YardLive.png ALT="Rpi-YardLive.png" width="666" height="611"></td>
+           <td>&nbsp;</td>
+		</tr>
+  	  </TABLE></CENTER>
+      </BLOCKQUOTE>
+    </BLOCKQUOTE><BR>
+
+	<P><CENTER><IMG SRC=colorbar.gif ALT="Color Bar" width="600" height="1"></CENTER></P>
+      <FONT FACE="Arial" SIZE="2">
+	  <B>Raspberry Pi Control Electronics:</B>
+	  &nbsp; <a href="DnB_RpiOverview.html">Overview</a>
+      &nbsp; <a href="DnB_RpiCode.html">Program Code</a>
+      &nbsp; <a href="DnB_RpiSchematic.html">Schematics</a>
+      &nbsp; <a href="DnB_RpiPhoto.html">Photos</a><br>
+      <BR></FONT>
+	  <P>
+	<P>
+  </BODY>
+</HTML>

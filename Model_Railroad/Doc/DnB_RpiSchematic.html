@@ -1,0 +1,242 @@
+<HTML>
+  <HEAD>
+    <TITLE>D&amp;B RPi Schematics</TITLE>
+    <LINK REL="shortcut icon" HREF="http://www.buczynski.com/favicon.ico">
+    <META NAME="robots" CONTENT="INDEX">
+    <META NAME="author" CONTENT="Don Buczynski">
+    <META NAME="keywords" CONTENT="perl,raspberry pi,rpi,model railroad,DCC,HO scale,train,trains,
+      Basic Stamp,BS2,Propeller,Parallax,Digitrax">
+    <META NAME="description" CONTENT="This page contains Raspberry Pi electronics details 
+      for the D&amp;B model railroad.">   
+  </HEAD>
+
+  <BODY BACKGROUND="blegtext.gif" BGCOLOR="#CCCCCC" TEXT="#000000">
+    <CENTER>
+    <TABLE ALIGN=CENTER BORDER=1 WIDTH=50% BGCOLOR="#D0D0D0" BORDERCOLORLIGHT="#999999"
+      BORDERCOLORDARK="#000000">
+      <TR>
+        <TD BGCOLOR="#AFDCFF">
+          <P ALIGN="center"><FONT SIZE=+3 FACE="Arial"><B>D&amp;B RPi Schematics</B></FONT></p>
+        </TD>
+      </TR>
+    </TABLE></CENTER><BR><BR><BR>
+
+    <BLOCKQUOTE>
+      <p><font face="Arial">The interfacing hardware has significantly changed with the move from
+      Basic Stamps to the Raspberry Pi. The overarching goal was to minimize changes to the layout
+      wiring. This wiring connects to the control electronics using 6 pin cable connectors. These
+      connectors plug into a new motherboard which in turn, has connections to the various RPi hat
+      boards.</font></p>
+
+      <p><font face="Arial">Use the following links to view each PDF schematic sheet. Downloaded 
+      all schematic sheets in a single zip file. <a href="RpiSchematicsJpg.zip">RpiSchematicsJpg</a>
+      &nbsp; &nbsp; &nbsp; <a href="RpiSchematicsPdf.zip">RpiSchematicsPdf</a><br>
+      <BLOCKQUOTE>
+        <a href="Rpi-ExternalBoards.jpg">JPG</a> &nbsp; - &nbsp;
+	    <a href="RpiExternalBoards.pdf">PDF</a> &nbsp; -&nbsp; External Board Interconnect Circuits<br>
+        <a href="Rpi-GradeCrossing.jpg">JPG</a> &nbsp; - &nbsp;
+	    <a href="RpiGradeCrossing.pdf">PDF</a> &nbsp; -&nbsp; Grade Crossing Interconnect Circuits<br>
+		<a href="Rpi-Keypad.jpg">JPG</a> &nbsp; - &nbsp;
+	    <a href="RpiKeypadInterconnect.pdf">PDF</a> &nbsp; -&nbsp; Keypad Interconnect Circuits <br>
+		<a href="Rpi-Mainboard.jpg">JPG</a> &nbsp; - &nbsp;
+	    <a href="RpiMainboard.pdf">PDF</a> &nbsp; -&nbsp; Mainboard Component Placement <br>
+		<a href="Rpi-Sensor.jpg">JPG</a> &nbsp; - &nbsp;
+        <a href="RpiSensorInterconnect.pdf">PDF</a> &nbsp; -&nbsp; Sensor Interconnect Circuits <br>
+		<a href="Rpi-Servo.jpg">JPG</a> &nbsp; - &nbsp;
+		<a href="RpiServoInterconnect.pdf">PDF</a> &nbsp; -&nbsp; Servo Interconnect Circuits <br>
+		<a href="Rpi-SignalHat.jpg">JPG</a> &nbsp; - &nbsp;
+		<a href="RpiSignalHat.pdf">PDF</a> &nbsp; -&nbsp; 74HC595 Shift Register Signal Circuits <br>
+		<a href="Rpi-SupportCircuits.jpg">JPG</a> &nbsp; - &nbsp;
+		<a href="RpiSupportCircuits.pdf ">PDF</a> &nbsp; -&nbsp; Support Circuits <br>
+	  </BLOCKQUOTE>
+      </font></p><br>
+
+	  <p><font face="Arial" size="4"><b>Servo Driver Hat</b></font></p>
+	  <BLOCKQUOTE>
+      <p><font face="Arial">Two 16 Channel Servo Driver hats are used to drive the turnout servos. 
+      This hat uses the PCA9685 chip which is configured for operation with the <a href="RpiSG90.pdf">SG90</a> R/C servo by the 
+      I2C_InitServoDriver code. Refer to the code and the <a href="RpiPCA9685.pdf">PCA9685 Document</a>
+      for more information.</font></p>
+
+           
+      <p><font face="Arial">The following images show the servo PWM signal. Measurements were 
+      taken with the scope probe attached to the signal pin of first servo channel.</font></p> 
+      
+      <CENTER><font face="Arial" size="2" color="#aa0000">Click image to enlarge.</font></CENTER>   
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=60%>
+	  <tr>
+	  <td><a href="RpiServoOpen.jpg">
+	     <IMG SRC=RpiServoOpen.jpg ALT="RpiServoOpen.jpg" width="311" height="198"></a></td>
+	  <td><a href="RpiServoMiddle.jpg">
+	     <IMG SRC=RpiServoMiddle.jpg ALT="RpiServoMiddle.jpg" width="311" height="198"></a></td>
+	  </tr>
+	  <tr>
+	  <td><a href="RpiServoClose.jpg">
+	     <IMG SRC=RpiServoClose.jpg ALT="RpiServoClose.jpg" width="311" height="198"></a></td>
+	  <td><a href="RpiServoRate.jpg">
+	     <IMG SRC=RpiServoRate.jpg ALT="RpiServoRate.jpg" width="311" height="198"></a></td>
+	  </tr>
+	  </TABLE></CENTER><BR>
+
+      <font face="Arial">The layout uses thirty-two SG90 servos that require five volt power. Each 
+      servo driver board has an isolated power connector that is feed from a dedicated 5 volt 1.2 
+      amp power source. The RPi supplies 3.3 volt power to the hat electronics via the 40 pin 
+      GPIO connector.</font></p></BLOCKQUOTE><br> 
+
+	  <p><font face="Arial" size="4"><b>74HC595 Shift Register Circuit</b></font></p>
+      
+	  <BLOCKQUOTE>
+      <p><font face="Arial">A suitable commercial product for driving the track signals using shift 
+      register functionality could not be located. I briefly considered using tri-color LEDs and a 16 
+      channel PWM board. In the end, minimum disturbance to the layout and signals won out. Therefore, 
+      a breadboard hat was constructed using four <a href="RpiSn74hc595.pdf">74HC595</a> shift registers 
+      and point-to-point wiring. This also provided a convenient place to locate the variable resistors
+      used to adjust the yellow color purity. Not as pretty, but functional none-the-less.</font></p>
+	  </BLOCKQUOTE>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+      <IMG SRC=RpiShiftRegister.jpg ALT="RpiShiftRegister.jpg" width="330" height="238">
+	  </TABLE></CENTER><BR>
+
+	  <BLOCKQUOTE>
+      <p><font face="Arial">74HC595 shift register timing measurement. Scope probe A: GPIO27_SCLK,
+      Scope probe B: GPIO17_XLAT.</font></p>
+	  </BLOCKQUOTE>
+
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+      <A href="RpiShiftRegisterTiming.jpg" border="0"> <IMG SRC=RpiShiftRegisterTiming.jpg 
+         ALT="RpiShiftRegisterTiming.jpg" width="616" height="414"></A>
+	  </TABLE></CENTER><BR>
+ 
+	  <br>
+	  <p><font face="Arial" size="4"><b>DCC Block Detectors</b></font></p>
+
+      <CENTER>
+      <IMG SRC=RpiBlockDetector.jpg ALT="RpiBlockDetector.jpg" width="527" height="189">
+      </CENTER><BR>
+
+	  <BLOCKQUOTE>
+      <p><font face="Arial">DCC power to the track is an AC signal of 10 to 16 volts. It consists of
+      binary information encoded into the AC "carrier" by varying the width of the positive and negative
+      peaks of the wave. This block detector design utilizes only the AC property of the signal; the 
+      binary information is not decoded. The circuit has limited drive current capacity and should be 
+      connected to high impedance input devices such as logic gates or op amps.</font></p>
+
+	  <p><font face="Arial">Each block of track to be detected must be electrically isolated by appropriate 
+	  gaps in the rails of the track. Two back-to-back 1N5400 diodes are connected in series with one leg 
+	  of the DCC power to a block of track. Silicon diodes typically drop about 6 tenths of a volt. Whenever 
+	  a locomotive or car draws power from the track within the block, this low AC voltage will be present 
+	  across the diodes. The 1N5400 diodes have a 3 amp current rating and should be adequate for HO and N 
+	  scale multiple locomotive trains. Higher current diodes should be used for larger scales. More on 
+	  current and short circuit protection below.</font></p>
+
+	  <p><font face="Arial">The secondary 8 ohm winding of the audio transformer is connected across the 
+	  1N5400 diodes. The voltage across the diodes is stepped up to a useable level by the primary winding 
+	  of the transformer. The actual voltage present in the primary transformer winding depends on the total 
+	  current being drawn within the block.</font></p>
+
+	  <p><font face="Arial">The remaining components of the circuit are connected to form a voltage doubling 
+	  power supply. The 1N4148 diodes and transformer center tap provide half-wave rectification of the 
+	  transformer primary voltage. Each capacitor is charged to the primary voltage on alternate half cycles. 
+	  The voltage across both capacitors is double the primary transformer voltage.</font></p>
+
+	  <p><font face="Arial">The capacitor values and load resistor effect the response time of the block 
+	  detector. The larger the capacitors, the further into the block the train will be before its presence 
+	  is reported. The capacitors also minimize signal transients as the train enters or leaves the block as 
+	  well as transients causes by dirty track and wheels. The 100K ohm resistor serves to discharge the 
+	  capacitors once the block is vacated. The value determines the length of the discharge period. This 
+	  value should be large enough to minimize signal transients.</font></p>
+
+	  <p><font face="Arial">The 1000 ohm resistor and 5.1 volt zener diode form a voltage divider and are 
+	  included for protection of the inputs to the logic circuits connected to the detector. These components 
+	  ensure that the detector output voltage does not rise above the zener diode voltage rating. Without 
+	  these components, a large current draw or short circuit within the block will cause the output voltage 
+	  of the detector to rise well above normal logic levels possibly damaging the attached input circuits.
+      </font></p>
+
+      <p><font face="Arial">The following table summarizes the detector DC output voltage under various 
+      loads. The voltage was measured across the two capacitors with the zener diode disconnected. The 
+      output voltage depends on train speed, locomotive load and power draw, and car lighting within the 
+      block.</font></p>
+
+      <center>
+      <table border="1" cellpadding="2" width="75%" bordercolorlight="#999999" bordercolordark="#000000">
+      <tr>
+      <td width="58%"><font face="Arial" size="2"><b>Load
+        Description</b></font></td>
+      <td width="21%" align="center"><font face="Arial" size="2"><b>Measured
+        Voltage Stopped</b></font></td>
+      <td width="21%" align="center"><font face="Arial" size="2"><b>Measured
+        Voltage Moving</b></font></td>
+      </tr>
+      <tr>
+      <td width="58%"><font face="Arial" size="2">10,000
+        ohm resistor across the track</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">1.3</font></td>
+      <td width="21%" align="center">&nbsp;</td>
+      </tr>
+      <tr>
+      <td width="58%"><font face="Arial" size="2">Car
+        with two 10,000 ohm resistor wheels (5,000 effective)</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">2.75</font></td>
+      <td width="21%" align="center">&nbsp;</td>
+      </tr>
+      <tr>
+      <td width="58%"><font face="Arial" size="2">Single
+        HO scale P2000 GP30 locomotive</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">3.20</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">5.65</font></td>
+      </tr>
+      <tr>
+      <td width="58%"><font face="Arial" size="2">Two
+        HO scale Bachmann Spectrum series F7 locomotives</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">4.75</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">6.10</font></td>
+      </tr>
+      <tr>
+      <td width="58%"><font face="Arial" size="2">Single
+        HO scale Athearn Genesis USRA 4-6-2 Light</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">3.75</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">5.90</font></td>
+      </tr>
+      <tr>
+      <td width="58%"><font face="Arial" size="2">All
+        four locomotives in same block</font></td>
+      <td width="21%" align="center"><font face="Arial" size="2">6.00</font></td>
+      <td width="21%" align="center">&nbsp;</td>
+      </tr>
+      </table>
+      </center>
+
+      <p><font face="Arial">The input voltage necessary to reliably register as a "high" condition 
+      varies. For example, the "74LS" family requires about 2 volts. The "74HC" family requires 
+      about 3.25 volts. For unpowered railroad cars, typically the last car or caboose, resistor 
+      wheels can be installed to continue producing a current in the block after the locomotives 
+      have exit. Select a value to produce the needed voltage using multiple wheel sets if 
+      required.</font></p>
+
+      <p><font face="Arial"><b>Short Circuits and Total Block Current:</b> DCC power boosters are 
+      capable of delivering more than the 3 amp current rating of the 1N5400 diode. Overload 
+      circuits in the DCC power booster will normally shut down track power in a short circuit 
+      condition and protect the diodes. Short term spikes above the maximum diode current limit 
+      can probably be tolerated. Long term operation at or above maximum current levels will cause 
+      diode heating and eventual failure. If a large number of locomotives under heavy load conditions 
+      are expected to be simultaneously operated in a block, measurement of the total current draw 
+      under worst case conditions should be made. Diodes with appropriate current ratings can then 
+      be substituted, or additional diodes wired in parallel, to increase current capacity.</font></p>
+
+	  </BLOCKQUOTE><br>
+
+	<P><CENTER><IMG SRC=colorbar.gif ALT="Color Bar" width="600" height="1"></CENTER></P>
+      <FONT FACE="Arial" SIZE="2">
+	  <B>Raspberry Pi Control Electronics:</B>
+	  &nbsp; <a href="DnB_RpiOverview.html">Overview</a>
+      &nbsp; <a href="DnB_RpiCode.html">Program Code</a>
+      &nbsp; <a href="DnB_RpiSchematic.html">Schematics</a>
+      &nbsp; <a href="DnB_RpiPhoto.html">Photos</a><br>
+      <BR></FONT>
+	  <P>
+	<P>
+  </BODY>
+</HTML>

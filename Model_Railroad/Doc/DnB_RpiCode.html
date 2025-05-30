@@ -1,0 +1,671 @@
+<HTML>
+  <HEAD>
+    <TITLE>D&amp;B RPi Code</TITLE>
+    <META NAME="description" CONTENT="This page contains Raspberry Pi electronics details 
+      for the D&amp;B model railroad.">   
+  </HEAD>
+
+  <BODY BACKGROUND="blegtext.gif" BGCOLOR="#CCCCCC" TEXT="#000000">
+    <CENTER>
+    <TABLE ALIGN=CENTER BORDER=1 WIDTH=50% BGCOLOR="#D0D0D0" BORDERCOLORLIGHT="#999999"
+      BORDERCOLORDARK="#000000">
+      <TR>
+        <TD BGCOLOR="#AFDCFF">
+          <P ALIGN="center"><FONT SIZE=+3 FACE="Arial"><B>D&amp;B RPi Code</B></FONT></p>
+        </TD>
+      </TR>
+    </TABLE></CENTER><BR><BR>
+
+    <p><font face="Arial" size="5"><b>Language and Environment</b></font></p> 
+	<BLOCKQUOTE>
+
+	<p><font face="Arial">The control software for the Raspberry Pi version of the D&amp;B model railroad is 
+	written in perl. This language has a large body of free downloadable support code on the internet. 
+	A number of advanced perl programming techniques, primarily forks and child processes, are used to 
+	implement the necessary code functionality. The perl language is included in the Raspbian OS distribution. 
+	Use the Standard Pi OS distribution, not NOOBS. 
+	</font></p>
+	
+	<p><font face="Arial">Update your Raspberry Pi Raspbian operating system to the latest version using the 
+	console command line.<br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo apt-get update</b></font></code><br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo apt-get dist-upgrade</b></font></code><br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo apt-get autoremove</b></font></code>&nbsp; &nbsp; (post-upgrade replaced file cleanup)<br>
+	<br>
+	The DnB code needs perl version 5.24.1 or later. To check the perl version installed on your RPi enter,<br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>perl -v</b></font></code><br>
+	<br>
+	The latest perl version can be installed using the console command line.<br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo apt-get install perl</b></font></code></font></p>
+	
+	<p><font face="Arial">'WiringPI' and the perl package 'Forks::Super' are also required. Standard
+	raspbian (Pi OS) includes WiringPi. The web server functionality requires 'HTTP::Daemon', 'HTTP::Status',
+	and 'Sys::HostAddr'. Use the following to install these modules at the RPi OS command line.</font><br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo cpanm Forks::Super</b></font></code></font><br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo cpanm HTTP::Daemon</b></font></code></font><br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo cpanm HTTP::Status</b></font></code></font><br>
+	&nbsp; &nbsp; &nbsp; <code><font size="4"><b>sudo cpanm Sys::HostAddr</b></font></code></font></p>
+
+	<p><font face="Arial">For temperature input, a DS18B20 temperature sensor is used. Raspbian directly supports 
+	its 1-wire protocol using modprobe. The device is configured as follows.<br>
+	<br>
+	&nbsp; &nbsp; &nbsp; In file <code><font size="4"><b> /boot/config.txt </b></font></code> add:<br>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <code><font size="4"><b>dtoverlay=w1-gpio</b></font></code><br>
+	<br> 
+	&nbsp; &nbsp; &nbsp; In file <code><font size="4"><b> /etc/modules </b></font></code> add:<br>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <code><font size="4"><b>w1-gpio</b></font></code><br>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <code><font size="4"><b> w1-therm</b></font></code><br>
+    
+    <p><font face="Arial">Following Rpi reboot, use the command &nbsp;<code><font size="4"><b>ls /sys/bus/w1/devices
+    </b></font></code>&nbsp; to list the DS18B20's unique device ID and update the $sensor variable in the Turnout::GetTemperature
+    code.</font></p>
+
+    <p><font face="Arial">The RPi hostname can be changed using the Raspbian desktop GUI. From the main menubar, select: 
+    <b>Preferences->Raspberry Pi Configuration</b>.</font></p>
+
+	<p><font face="Arial">The D&amp;B model railroad control program consists of the following files. All files are
+	collocated in a common directory. The perl BEGIN section in the main DnB.pl code adds the startup directory to
+	the search path (@INC) that is used to locate the supporting DnB code modules (.pm). All other perl program
+	dependent code module paths are defined during perl installation on the RPi.<br>
+	  <BLOCKQUOTE>
+      <TABLE BORDER=0 WIDTH=70%>
+	  <tr><td><b>DnB.pl</b></td><td>Main program file.</td></tr>
+	  <tr><td><b>DnB_GradeCrossing.pm</b></td><td>Functions related to grade crossing operation.</td></tr>
+	  <tr><td><b>DnB_Mainline.pm</b</td><td>Functions related to mainline track section operation.</td></tr>
+	  <tr><td><b>DnB_Sensor.pm</b></td><td>Functions related to acquisition of sensor input.</td></tr>
+	  <tr><td><b>DnB_Signal.pm</b></td><td>Functions related to driving the trackside signals.</td></tr>
+	  <tr><td><b>DnB_Turnout.pm</b></td><td>Functions related to driving the track turnouts.</td></tr>
+	  <tr><td><b>DnB_Yard.pm</b></td><td>Functions related to setting yard turnouts.</td></tr>
+	  <tr><td><b>DnB_Message.pm</b></td><td>Common functions used by all code modules.</td></tr>
+	  <tr><td><b>DnB_Simulate.pm</b></td><td>Simulation data and associated code.</td></tr>
+	  <tr><td><b>DnB_Webserver.pm</b></td><td>Functions related to the Webserver and HTML page generation.</td></tr>
+	  <tr><td><b>web directory</b></td><td>Web page related CSS and image files.</td></tr>
+	  </TABLE>
+	</BLOCKQUOTE></BLOCKQUOTE><br>
+
+    <p><font face="Arial" size="5"><b>General Description</b></font></p> 
+	<BLOCKQUOTE>
+    <p><font face="Arial"><a href="DnBOperatorGuild.pdf">D&amp;B Operators Guide</a> PDF file.</font></p>  
+
+	<p><font face="Arial">The DnB.pl main program file contains a large amount of description that is not 
+	repeated here. Please refer to this documentation for the essential details regarding how the program 
+	operates and a clearer understanding of its code structures and design.</font></p>
+	
+	<p><font face="Arial">The DnB.pl file contains the program configuration and working data variables. A
+	turnout configuration file is created during program shutdown using the current positions of the turnouts. 
+	This file is loaded during the next startup, if present, to persist the turnout positions from the previous 
+	layout operating session. This file can also be user edited between starts to change the Open, Close, and 
+	Rate values for each turnout. This is typically needed when turnout servos are installed or replaced on 
+	the layout.</font></p> 
+
+	<p><font face="Arial">Data structures in the main program are referenced by pointer to the called subroutines 
+	as needed. Subroutines use and update this data and return status code values. Forked child processes pass 
+	data to the parent using functionality provided by the Forks::Super module. This module overloads the default 
+	fork functions and provides a wealth of additional functionality. This module has helped to simplify the 
+	design of the RPi based program code.</font></p>
+
+	<p><font face="Arial">The <b> Main Program Loop </b>, running at about ten cycles per second, orchestrates 
+	the overall program flow and sequence of operations. In general, it reads the sensor inputs and then calls 
+	the various turnout, signal, and track section processing routines. Many of the called subroutines are 
+	coded as state machines which rely on being periodically called; though not for strict timing. Essentially, 
+	subroutines store a needed future activation time in a working variable. With each main loop call, the 
+	subroutine compares the current time with the stored future time and performs its functions based on the 
+	result.</font></p>    
+
+	<p><font face="Arial">The <b>Grade Crossing</b> code utilizes a state machine and child process. The child 
+	process is responsible for flashing the signal lamps. The state machine logic is called once per main 
+	program loop iteration. State data that is used for grade crossing control is persisted in the GradeCrossingData 
+	hash. Each grade crossing is in one of the following states; <em><b>idle</b></em>, <em><b>gateLower</b></em>, 
+	<em><b>approach</b></em>, <em><b>road</b></em>, <em><b>gateRaise</b></em>, or <em><b>depart</b></em>. The 
+	persisted values, current sensor bit values, and state transition logic move the signal through these states. 
+	Refer to the DnB_GradeCrossing.pm file for more details.</font></p>
+
+    <p><font face="Arial">The <b>Mainline</b> code coordinates automated and user input functions
+    related to the Holdover, Midway, and Wye track sections. Automated functions include train presence
+    detection using block detectors and across-the-track infrared sensors. This input is used to position
+    turnout points that direct a train onto a specific track. User input via keypad button can be used to
+    override these turnout positioning behaviors.</font></p>
+
+    <p><font face="Arial">The <b>Sensor</b> code is used to initialize the I2C GPIO extender boards and get 
+    user keypad related input during program operation.</font></p>
+
+    <p><font face="Arial">The <b>Signal Color</b> code, using block detector input, sets each signal to the 
+    required color. A track block is 'occupied' when a power drawing locomotive or car is present.
+    The block protecting trackside signals have LEDs that are two lead red/green devices. Each LED is wired 
+    to two consecutive shift register bits. Red is illuminated with one current flow direction and green is 
+    illuminated with the opposite current flow direction. The current flow direction is determined by which of 
+    the two register bits is set high/low. The semaphore color is set by its flag board position which is 
+    servo actuated. Once the flag board has been moved into position, the signal lamp is illuminated.</font></p>
+
+    <p><font face="Arial">The <b>Turnout</b> code provides functionality for positioning the servos that 
+    are physically attached to the turnout points. The open/close movement is accomplished over a 0.75 second 
+    interval using a forked process. After fork, the parent stores the PID of the child process. The operation 
+    is in-progress until this PID is reset. The child code completes the servo movement independent of other 
+    turnout positioning or software activities. Upon completion, the child updates the turnout position in the 
+    parent, resets the PID, and then terminates. This is accomplished using Forks::Super stdout/stderr related 
+    functionality.</font></p>
+
+    <p><font face="Arial">The <b>Yard</b> code sets the yard turnouts based on user keypad input. Two keypad 
+    button presses are required which specify the desired from and to tracks. If the input corresponds to a 
+    valid yard route, the appropriate turnout points are set. A keypad indicator and audio tone confirms 
+    button input to the operator.</font></p>
+
+    <p><font face="Arial">The <b>Message</b> module contains console messaging functions, general program 
+    support functions, and the Raspbian sound player interface function. The various beeps that are sounded 
+    during operation were created using a tone generation feature in Audacity and saved as WAV and MP3 files.
+    </font></p>
+
+    <p><font face="Arial">The <b>Simulate</b> module contains the code and data that is used when the <b>-a</b>
+    option is specified on the DnB.pl startup CLI. The initialization function loads the simulation commands
+    into a working hash. The SimulationStep function is called by the main loop to get the sensor bits for
+    the step. The SimulationStep code also initiates any simulation specified yard routes or individual 
+    turnout positionings. Refer to the <b>EndToEnd</b> routine for details.</font></p>
+
+    <p><font face="Arial">The <b>Webserver</b> module contains the code that is used when the <b>-w</b>
+    option is specified on the DnB.pl startup CLI. When enabled, an external web browser can be used to 
+    view various layout operational data. The browser connection point (IP:Port) is displayed on the console 
+    output. The IP value is the RPi hostname or corresponding numeric address (xxx.xxx.xxx.xxx). Port is the 
+    DnB.pl defined $ListenPort value; default 8080.</font></p>
+	  
+	<p><font face="Arial">The DnB program code displays operational messages on the console or optionally
+	to the RPi serial port. For headless operation, all console messages can be suppressed by specifying the 
+	-q option on the startup command line. Output of built in program debug messaging is enabled by a command 
+	line specified debug option which includes a numeric value to control message verbosity. There are some 
+	sections of code, primarily child processes that use the STDOUT and STDERR filehandles, where debug 
+	code is commented out. This code can be uncommented for program debug if needed. This code will interfere
+	with normal program operation and should be commented out when debug is completed.</font></p>
+	
+	<p><font face="Arial">The following summarizes the startup program sequence.<br>  
+    <BLOCKQUOTE>
+	1. Process these command line options, if specified, and then exit program.<br>
+	&nbsp; &nbsp; &nbsp; &bull; Program help (-h).<br>
+	&nbsp; &nbsp; &nbsp; &bull; I2C address display (-i).<br>
+	&nbsp; &nbsp; &nbsp; &bull; Creation of new TurnoutData file (-f).<br>
+	<br>
+	2. Check for and terminate any DnB associated orphan child processes.<br>
+	<br>
+	3. Open serial port (-y) for redirect of console message output.<br>
+	<br>
+	4. Display 'DnB program start' message on the console. $MainRun variable set to 1.<br>
+	<br>
+	5. Initialize GPIO pins and I2C devices.<br>
+	&nbsp; &nbsp; &nbsp; &bull; RPi GPIO pins.<br>
+	&nbsp; &nbsp; &nbsp; &bull; I2C I/O Plus board 1; MCP23017 chips 1 and 2 (sensor input).<br>
+	&nbsp; &nbsp; &nbsp; &bull; I2C I/O Plus board 2; MCP23017 chips 3 and 4 (keypad scan and button input).<br>
+	<br>
+	6. Start child processes.<br>
+    &nbsp; &nbsp; &nbsp; &bull; KeypadChildProcess (16 button keypad)<br>
+    &nbsp; &nbsp; &nbsp; &bull; ButtonChildProcess (two 4 button keypads)<br>
+    &nbsp; &nbsp; &nbsp; &bull; PositionChildProcess (holdover red/yellow train position indicators)<br>
+    &nbsp; &nbsp; &nbsp; &bull; SignalChildProcess (Signal shift register driver)<br>
+    &nbsp; &nbsp; &nbsp; &bull; GcChildProcess 1<br>
+    &nbsp; &nbsp; &nbsp; &bull; GcChildProcess 2 (with crossing gates)<br>
+    &nbsp; &nbsp; &nbsp; &bull; Webserver  (if -w is specified on CLI)<br>
+	<br>
+	7. Initialize turnout servos.<br>
+	&nbsp; &nbsp; &nbsp; &bull; Load previous TurnoutData file if available.<br>
+	&nbsp; &nbsp; &nbsp; &bull; Initialize servo boards 1 and 2; PCA9685 chip.<br>
+	&nbsp; &nbsp; &nbsp; &bull; Set servo channels to CLI (-o|-m|-c) or TurnoutData specified PWM value.<br>
+	<br>
+	8. Display ambient temperature in degrees C.<br>
+	<br>
+    9. Perform command line specified testing. Test termination results in program exit.<br>
+    &nbsp; &nbsp; &nbsp; &bull; Sensor test (-b, -n)<br>
+    &nbsp; &nbsp; &nbsp; &bull; Keypad test (-k)<br>
+    &nbsp; &nbsp; &nbsp; &bull; Grade crossing test (-g)<br>
+    &nbsp; &nbsp; &nbsp; &bull; Signal test (-s)<br>
+    &nbsp; &nbsp; &nbsp; &bull; Turnout servo test (-t)<br>
+    &nbsp; &nbsp; &nbsp; &bull; Power polarity relay test (-r)<br>
+    &nbsp; &nbsp; &nbsp; &bull; Sound player test (-p)<br>
+    <br>  
+    10. Display 'DnB main loop start message' on the console. $MainRun variable set to 2 (simulation) or 3 (operation).<br>
+    <br>     
+	11. Run main loop until terminated by ctrl+c or shutdown button.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;A. Top of loop. Read sensors or get simulation data (32 bits).<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;B. Process holdover track section sensors. Set turnouts as needed.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;C. Process midway track section sensors. Set turnouts as needed.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;D. Process wye track section sensors. Set turnouts as needed.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;E. Process both grade crossing track sections.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;F. Process signals. Set colors based on block detector inputs.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;G. Set next turnout for an in-progress yard route request.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;H. If no in-progress yard route, get new yard route input.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;I. Process holdover track section route button input.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;J. Process midway track section turnout button input.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;K. Process wye track section turnout button input.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;L. Consolidate and save data for web server.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;M. Check shutdown button. Initiate shutdown sequence if set.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp;N. 90 msec loop delay.<br>
+	<br>
+	12. User initiated program termination; ctrl+c or shutdown button.<br>
+	&nbsp; &nbsp; &nbsp; a. Ctrl+c input: Stop child processes. Program exit.<br> 
+    &nbsp; &nbsp; &nbsp; b. Shutdown button: Continue main loop processing and -<br>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &bull; Sound 5 countdown tones, one each second.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &bull; Cancel if shutdown button pressed again.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &bull; Perform orderly shutdown of child processes, signals, relays, and indicators.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &bull; Save turnout position data to file.<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &bull; Shutdown Raspbian OS.<br>
+    </BLOCKQUOTE></BLOCKQUOTE></font></p>
+    </BLOCKQUOTE><br>
+
+    <p><font face="Arial" size="5"><b>Child Processes</b></font></p> 
+	<BLOCKQUOTE>
+    <p><font face="Arial" size="4"><b>GcChildProcess</b></font></p>
+	<BLOCKQUOTE>
+    <p><font face="Arial">A grade crossing child process is launched during main program startup 
+    for each grade crossing. This child process is used to start and stop grade crossing signal lamp flash 
+    operation. Crossing gates, if present, can't be driven by this child process due to a Forks::Super 
+    restriction. A child process is not allowed to spawn a child process; servo movement is essentially a
+    child process. Gate movement servos are handled by the grade crossing state logic.<br>
+	<br>
+    The child pid value is stored in the GradeCrossingData hash. This pid value is used by the parent state 
+    logic to send messages to the child process. Forks::Super 'child_fh' functionality is used for communication 
+    between the parent and child processes. The parent sends a start/stop signal message to the child's stdin.
+    The child process checks its STDIN file handle for new messages and acts on them accordingly. The following
+    messages are used.<br>
+	<BLOCKQUOTE>
+    <b><code><font size="4">start:apr</font></code></b> &nbsp; &nbsp; - Start flashing lamps with bell sound 1.<br>
+    <b><code><font size="4">start:road</font></code></b> &nbsp; - Start flashing lamps with bell sound 2.<br>
+    <b><code><font size="4">stop</font></code></b>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; - Stop lamp flash and bell sound.<br>
+    <b><code><font size="4">exit</font></code></b>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; - Terminate GcChildProcess.
+	</BLOCKQUOTE></BLOCKQUOTE></font></p>
+
+    <p><font face="Arial" size="4"><b>KeypadChildProcess</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">The keypad child process is launched using Forks::Super and processes user input 
+	from a Storm 4x4 keypad. 
+	Inside the keypad, the buttons are arranged in a 4 by 4 grid. When a button is pressed, a row and column are electrically 
+	connected. For example, in the following diagram, pressed button [5] connects row B to column 2.<font></p>
+	<BLOCKQUOTE>
+	<code>
+      <TABLE BORDER=0>
+	  <tr><td align="right">&nbsp; &nbsp; &nbsp; col</td><td></td><td align="center"><b>1</b></td><td></td><td align="center"><b>2</b></td><td></td><td align="center"><b>3</b></td><td></td><td align="center"><b>4</b></td><td></td></tr>
+	  <tr><td align="center">row</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td></tr>
+	  <tr><td align="center"><b>A</b></td><td>-- </td><td align="center">0</td><td> --- </td><td align="center">1</td><td> --- </td><td align="center">2</td><td> --- </td><td align="center">3</td><td> --</td></tr>
+	  <tr><td></td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td></tr>
+	  <tr><td align="center"><b>B</b></td><td>-- </td><td align="center">4</td><td> --- </td><td align="center">[5]</td><td> --- </td><td align="center">6</td><td> --- </td><td align="center">7</td><td> --</td></tr>
+	  <tr><td></td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td></tr>
+	  <tr><td align="center"><b>C</b></td><td>-- </td><td align="center">8</td><td> --- </td><td align="center">9</td><td> --- </td><td align="center">A</td><td> --- </td><td align="center">B</td><td> --</td></tr>
+	  <tr><td></td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td></tr>
+	  <tr><td align="center"><b>D</b></td><td>-- </td><td align="center">C</td><td> --- </td><td align="center">D</td><td> --- </td><td align="center">E</td><td> --- </td><td align="center">F</td><td> --</td></tr>
+	  <tr><td></td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td></tr>
+	  </TABLE>
+	</code>
+	</BLOCKQUOTE>
+
+    <p><font face="Arial">The keypad is connected to eight pins of a MCP23017 port. Four of these pins are configured 
+    as output and drive the keypad columns. The other four are configured as input with pull-up and connect to the keypad 
+    rows. By sequentially driving a single column pin low and then sequentially sampling the row pins one at a time, a 
+    pressed button can be identified. With no button pressed, all button coordinates will read high (1) due to the 
+    pull-up. A pressed button coordinate will read low (0). For multiple pressed buttons, the first button detected 
+    is used.<font></p>
+
+    <p><font face="Arial">The keypad child process scans the keypad 10 times a second. When a button press 
+    is detected, the child process sends the button number (0-F) to its STDERR filehandle. The button press 
+    value can then be read by the parent code using Forks::Super::read_stderr($KeypadChildPid).
+    </BLOCKQUOTE><font></p>
+
+    <p><font face="Arial" size="4"><b>ButtonChildProcess</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">The button child process functions in a manner similar to the keypad child process. It is 
+	launched using Forks::Super and processes user input from the two Storm 1x4 keypads. When a button is pressed,
+   a column is electrically connected to common. For example, in the following diagram, pressed button [2] connects column 3 
+   to common.<font></p>
+	<BLOCKQUOTE>
+	<code>
+      <TABLE BORDER=0>
+	  <tr><td align="right">&nbsp; &nbsp; &nbsp; col</td><td></td><td align="center"><b>1</b></td><td></td><td align="center"><b>2</b></td><td></td><td align="center"><b>3</b></td><td></td><td align="center"><b>4</b></td><td></td></tr>
+	  <tr><td></td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td></tr>
+	  <tr><td align="center"><b>common</b></td><td>-- </td><td align="center">0</td><td> --- </td><td align="center">1</td><td> --- </td><td align="center">[2]</td><td> --- </td><td align="center">3</td><td> --</td></tr>
+	  <tr><td align="center"><b>(gnd)</b></td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td><td align="center">|</td><td></td></tr>
+	  </TABLE>
+	</code>
+	</BLOCKQUOTE>
+
+    <p><font face="Arial">The keypad button columns are connected to a MCP23017 port. These pins are configured 
+    as input with pull-up. The keypad common is connected to ground. With no button press, all button coordinates 
+    will read high (1) due to the pull-up. A pressed button will read low (0). For multiple pressed buttons, the 
+    first button detected is used.<font></p>
+
+    <p><font face="Arial">The button child process scans the keypad 20 times a second and differentiates
+    between single and double button presses. A double button press is reported if the same button is
+    pressed within a one second time period. When a button press is detected, the child process sends
+    a string, <b>s</b>(0-3) or <b>d</b>(0-3), to its STDERR filehandle. The button press string can then 
+    be read by parent code using Forks::Super::read_stderr($ButtonChildPid).<font></p>
+    </BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>PositionChildProcess</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">The position child process reads the IR sensors associated with the hidden 
+	holdover blocks B01 and B02. These IR sensors are physically located near the exit ends of these 
+	hidden holdover tracks. When a train interrupts an IR beam, the PositionChildProcess illuminates 
+	the corresponding panel LED. This provides a visual indication of train position within these 
+	hidden holdover tracks. Warning point (yellow) and stop point (red) LEDs are used. In this way, 
+	the engineer can stop the train prior to activating the S02 or S03 sensor which causes the holdover 
+	turnouts to be set for train departure. No other data is exchanged between this child process and 
+	the main program.<font></p>
+    </BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>SignalChildProcess</b></font></p>
+	<BLOCKQUOTE>
+    <p><font face="Arial">The signal child process is launched using Forks::Super and is used to drive 
+    the 74HC595 shift register that illuminates the trackside signals. This simplifies the code and timing 
+    requirements needed to show yellow signals by toggling between red and green. This is accomplished by 
+    using two 32 bit variables. In one, the signal color bits are set to red. In the other, the signal 
+    color bits are set to green. The two variables are alternately sent to the shift register by the 
+    SignalChildProcess. For non-yellow signal positions, the bits are set to the same color in each 
+    variable.<br>
+    <br>
+    Two time delays are used to balance the red and green 'on' times. This provides for a coarse adjustment 
+    of the yellow color for all signal positions. The variable resistors on the driver board are then used 
+    for fine yellow color adjustment of each signal.<br>
+	<br>
+    The combined time delays further control the repetition rate of the signal child's while loop.
+    This rate should be just high enough to eliminate flicker when the yellow color is displayed; 
+    about 25-30 cycles per second. The lowest possible cycle rate is desired to minimize CPU 
+    loading by the signal child's while loop. To further minimize CPU load, the signal child optimizes 
+    itself by checking for any yellow signal indications. When no yellow signals are being displayed, 
+    the loop repetition rate is reduced to 4 cycles per second.<br>
+	<br>
+    Forks::Super is used to communicate new signal settings. The new data is read and used by the signal 
+    child process until subsequently updated. To minimize child processing, the message data is formatted 
+    for immediate child use by the main program code.<br>
+	<BLOCKQUOTE>
+    <b><code><font size="4">SignalMask</font></code></b>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; - 32 bit mask, all 1's. Changed signal two bits set to 0.<br>
+    <b><code><font size="4">SignalColor1</font></code></b> &nbsp; &nbsp; - 32 bit mask, all 1's. Changed signal set to color value; red (0b01), green (0b10), <b>yellow (0b01)</b>, or off (0b00).<br>
+    <b><code><font size="4">SignalColor2</font></code></b>&nbsp;&nbsp; &nbsp; - 32 bit mask, all 1's. Changed signal set to color value; red (0b01), green (0b10), <b>yellow (0b10)</b>, or off (0b00).<br>
+    <b><code><font size="4">Terminator</font></code></b>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;- "-\n". Used to remove processed messages from the child's stdin.
+	</BLOCKQUOTE></font></p>
+    </BLOCKQUOTE>
+    
+    <p><font face="Arial" size="4"><b>Webserver Child Process</b></font></p>
+	<BLOCKQUOTE>
+    <p><font face="Arial">The webserver child process is launched, when <b>-w</b> is specified on the DnB.pl startup CLI, 
+    using Forks::Super. A socket access point is created at web address &#60;RPi hostname&#62;<b>:</B>$ListenPort. The 
+    web server code then monitors the socket for browser connections. Incoming requests are passed to <b>NewConnection()</b> 
+    where they are validated and file paths adjusted for physical location; $WebRootDir or $WebDataDir. The request is 
+    then passed to <b>RequestHandler()</b> where the response HTML is generated and sent back to the browser. This 
+    dynamically created HTML is stored and served from $WebDataDir; ramdisk /dev/shm. Static files are served from the 
+    $WebRootDir directory; e.g. /home/pi/perl/web.<br>
+	<br>
+	Cascading Style Sheets (CSS) are used for web page decoration and element placement. Two CSS files are sent to the browser. 
+	Each is optimized for window size larger or smaller than 800 pixels. The browsers selects which CSS to use based on the 
+	current browser window size. Transparent overlay files are used on the <b>Live</b> page to color the active track blocks 
+	and signals. Java-script is used to periodically auto-refresh the track block and signal overlay files.
+    </BLOCKQUOTE><br>
+
+    <p><font face="Arial" size="5"><b>Test Code</b></font><br> 
+	<BLOCKQUOTE>
+	A number of tests are available for use with code verification and layout operational adjustments. They are invoked 
+	when needed using the appropriate DnB.pl command line option. Tests are run individually and do not involve the DnB 
+	main program loop. This helps to focus testing to specific functions and features. Each test runs until terminated 
+	by ctrl+c console input.<br>
+
+    <p><font face="Arial" size="4"><b>Sensor test (-b option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test reads the user specified sensor chip(s) and displays the value(s) on the console. This
+	continues once per second until terminated by ctrl+c. While running, each sensor bit can be manually activated to verify 
+	the associated circuitry is working as expected. The MCP23017 chip(s) to be tested are specified using a comma separated 
+	list or range. For example:<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -b 1,3</b> &nbsp; &nbsp; Read and display chips 1 and 3.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -b 1:4</b> &nbsp; &nbsp; Read and display chips 1 through 4.<br>
+    </font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Sensor tone test (-n option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test reads the sensor inputs defined in the SensorBit hash twice a second. When a bit change 
+	from inactive (0) to active (1) is detected, tones are sounded corresponding to the hash key of the active bit. For example, 
+	SensorBit{00} sounds one tone, SensorBit{07} sounds eight tones. A double tone is sounded when the bit becomes inactive (0). 
+	A console message is also output detailing the bit change. This facilitates sensor operability testing at remote 
+	layout locations; such as manually blocking the infrared emitter to detector light path. This test runs until terminated 
+	by ctrl+c.</font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Keypad test (-k option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test reads the stderr messages generated by KeypadChildProcess and ButtonChildProcess 
+	and displays the results on the console. Reads are performed at a two second interval until terminated by ctrl+c. 
+	For the 4x4 keypad, the 1st entry LED is toggled between on and off with each button press. For the 1x4 keypad, 
+	single and double press buttons are reported.<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -k</b> &nbsp; &nbsp; Read and display keypad inputs.<br>
+    </font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Grade crossing test (-g option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test bypasses the grade crossing sensors and sends the 'start:apr', 
+	'start:road', and 'stop' commands directly to the grade crossing child process. The gate
+	servos are positioned if present on the grade crossing. The sound effects circuits are also
+	activated.<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -g 1</b> &nbsp; &nbsp; &nbsp;&nbsp; Test grade crossing 1.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -g 1,2</b> &nbsp; &nbsp; Test grade crossings 1 and 2.<br>
+	</font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Signal test (-s option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test exercises the functions associated with the block protection signal and runs until 
+	terminated by ctrl+c. The signals to be tested are specified using a comma separated list or range. For example:<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -s 1,5</b> &nbsp; &nbsp; Cycle signals 1 and 5; red, green, yellow, and off.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -s 1:12</b> &nbsp; &nbsp;&nbsp; Cycle all signals; red, green, yellow, and off.<br>
+	<br>
+	Prefacing the range with a <b>r</b> causes random signal selection and color setting.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -s r4:9</b>. &nbsp; &nbsp; Random signal 4 through 9; set random color red, green, yellow, or off.<br>
+	<br>
+	Prefacing the sequential or random range with a <b>g</b> causes the grade crossing signals to be
+	included in the test run. Grade crossing 1 and 2 are started for color green and yellow respectively. 
+	Grade crossing 1 and 2 are stopped for color off and red respectively. Crossing gates are not positioned.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -s g1:12</b> &nbsp; &nbsp; Cycle all signals; red, green, yellow, and off. Include grade crossings.<br>
+	</font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Turnout servo test (-t option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test exercises the functions associated with the turnout servos and runs until terminated. 
+	The servos to be tested are specified using a comma separated list or range. For example:<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -t 1,3,5</b> &nbsp; &nbsp; Exercise servos 1, 3, and 5; sequential positions Open, Middle, Close.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -t 1:10</b> &nbsp; &nbsp;&nbsp; Exercise servos 1 through 10; sequential positions Open, Middle, Close.<br>
+	<br>
+	Prefacing the range with a <b>r</b> causes random servo selection and Open/Close positioning.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -t r1:10</b>. &nbsp; &nbsp; Exercise servos 1 through 10; random order, positions Open and Close.<br>
+	<br>
+	In the above commands, about 10 servo position changes are performed per second. This verifies the functionality
+	of multiple concurrent servo moves. This rate exceeds the maximum expected number of concurrent position 
+	changes (the longest yard route is 8 turnouts) during normal layout operation. The console output shows the inprogress
+	operations. This can also be viewed in a separate command console using the linux <b>top</b> command. The number of
+	DnB.pl processes shown, minus 1 for the test code, is the concurrent inprogress operations. The CPU utilization can
+	also be seen in the top command output.<br>
+	<br>
+	Prefacing the sequential or random range with a <b>w</b> causes the positioning to be done one servo at a time. This verifies
+	the child/Forks::Super pid reset functionality.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -t w1,3,5</b> &nbsp; &nbsp; Exercise servos 1, 3, and 5; wait for each operation to complete before next.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -t wr1:10</b> &nbsp; &nbsp; Exercise servos 1 through 10; wait for each operations to complete before next.<br>
+	<br>
+	Demo clips: 
+	<A HREF="./servoSeq.mp4">Sequential 1:32</A>
+	&nbsp; &nbsp; &nbsp; 
+	<A HREF="./servoRandom.mp4">Random 1:32</A>
+    </font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Set servo position (-o x, -m x, -c x)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">These commands set the specified servo number x to its open, middle, or closed position as defined in 
+	the TurnoutDataFile.txt file. Used for servo mechanical and turnout point rail adjustments. The program exits once the 
+	position is set. When x is specified as 0, all servos are set to the specified position. For example:<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -m 0</b> &nbsp; &nbsp; Set all servos to the middle position.<br>
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -c 1</b> &nbsp; &nbsp; &nbsp;Set servo 1 to its closed position.<br>
+    </font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Sound player test (-p option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test is used to verify the linux sound player configurations and audition the available sound 
+	files. The available sound files in the D&B sound file directory are listed along with an associated number. When a number 
+	is entered by the user, the corresponding sound file is played. Entry of sound number zero (0) terminates the test.<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -p</b><br>
+	<br>
+	Demo clip: 
+	<A HREF="./audioPlayer.mp4">Audio Player Test</A>
+    </font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Power polarity relay test (-r option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test is used to verify the power polarity relay operation. The relays are sequentially 
+	energized for 5 seconds and then de-energized for 5 seconds. This test runs until it is terminated with ctrl+c.<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -r</b>
+	</font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Servo temperature adjust test (-u option)</b></font></p>
+	<BLOCKQUOTE>
+    <p><font face="Arial">This test is used to verify the servo position temperature calculation. Input parameters 
+    specify a servo number (gate or semaphore) and one or more temperatures in degrees C. The first temperature is 
+    set and the servo is positioned. The cycle repeats for each specified temperature. Each position (Open, Middle, 
+    Close) is tested unless a single position is specified; o, m, or c. For example, to test the semaphore flag 
+    board positioning (servo #30) 'Close' position, the following command would be used.<br>
+    &nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -w 30c:30,25,20,15</b></font></p>
+                
+    <p><font face="Arial">A low tone is sounded at the start of each position. A high tone sounds for each 
+    temperature change at that position. Changes occur at 2 second intervals. This test runs until terminated 
+    by Ctrl+C.</font></p></BLOCKQUOTE>
+
+    <p><font face="Arial" size="4"><b>Simulation mode (-a option)</b></font></p>
+	<BLOCKQUOTE>
+	<p><font face="Arial">This test simulates train movements and turnout operations on the layout. The default
+	<b>EndToEnd</b> simulation runs until terminated by ctrl+c. Sensor bits, yard routes, and turnout positions 
+	that are stored in the %SimulationData hash are used instead of the actual layout input. In this mode, the 
+	operational code is exercised without actually running a train on the layout. Refer to the %SimulationData 
+	hash for details. Use debug level 0 to display additional simulation data on the console.<br> 
+	&nbsp; &nbsp; &nbsp; &nbsp; <b>DnB.pl -a</b></font></p></BLOCKQUOTE><br>
+
+    <p><font face="Arial" size="5"><b>Raspbian OS Startup and Shutdown</b></font></p> 
+	<BLOCKQUOTE>
+	  <p><font face="Arial">The following Raspbian OS configuration changes are used for startup and shutdown of
+	  the RPi. Search the web for other alternatives.</font></p>
+
+      <p><font face="Arial" size="4"><b>DnB.pl Program Start</b></font><br> 
+	  <BLOCKQUOTE>
+	    <font face="Arial">The /etc/rc.local file is used to automatically launch DnB.pl once the Raspbian OS has 
+        completed boot. Configure rc.local using the CLI as follows.
+	    <BLOCKQUOTE>
+          1. Edit the file: <code><font size="4"><b>sudo nano /etc/rc.local</b></font></code></br><br>
+          2. Add the following to the file just before the exit 0 line. Change the path to the DnB.pl file if stored
+          in a different location.<br><br>
+          &nbsp; &nbsp; <code><font size="4"><b>/home/pi/perl/DnB.pl -w -q</b></font></code><br><br>
+          3. Use the editor commands <code><font size="4"><b>^O</b></font></code> and <code><font size="4"><b>^X</b>
+          </font> </code> to save the file and exit the editor.<br><br>
+          Alternatively, the line ' <code><font size="4"><b>>> /dev/shm/DnB.log 2>&1</b></font></code> ' 
+          (without quotes) could be used in place of the &nbsp;<b>-q</b>&nbsp; to send the DnB.pl console output to a log file. The 
+          log file could then be monitored using <code><font size="4"><b>tail -f /dev/shm/DnB.log</b></font> </code> in
+          a seperate command window. Use a path in <code><font size="4"><b>/home/pi</b></font> </code> if the log 
+          needs to be retained when the RPi is powered down.</font></p>
+        </BLOCKQUOTE>
+
+        <p><font face="Arial">During Raspbian OS boot and automatic DnB.pl launch, if the shutdown button is held down,
+        the DnB.pl program will acknowledge the button hold and then exit. No DnB child processes will be started. The 
+        RPi will then be usable for normal Raspbian CLI/GUI interaction using monitor, mouse, and keyboard. Use the 
+        CLI/GUI from this point to shutdown Raspbian.</font></p>
+      </BLOCKQUOTE></p>
+
+      <p><font face="Arial" size="4"><b>DnB.pl Program Shutdown</b></font><br> 
+	  <BLOCKQUOTE>
+	    <p><font face="Arial">The shutdown button is monitored by the DnB.pl program. Detection of a button press 
+	    initiates a 10 second countdown during which five tones will be sounded. At the end of the delay, the main 
+	    program performs an orderly shutdown of the software processes and places the hardware interfaces into a 
+	    safe condition. During the countdown, shutdown can be aborted by another press of the shutdown button.</font></p>
+
+       <p><font face="Arial">Safe condition serves to help protect the servos, sound modules, and signal lamps should 
+       layout power remain on for an extended period. The following shutdown steps are performed.
+       <BLOCKQUOTE>
+         1. Stop all child processes.<br>
+         2. Raise crossing gates and semaphore flag board.<br>
+         3. Wait for in-progress turnout moves to complete.<br>
+         4. Turn off all servo channels.<br>
+         5. Turn off all signal lamps.<br>
+         6. Turn off all GPIO driven relays and indicator lamps.<br>
+         7. Turn off holdover indicator lamps.<br>
+         8. Save the current servo positions to TurnoutDataFile.txt.<br>
+         9. Shutdown Raspbian OS using:  <b>sudo shutdown -h now</b><br>
+	   </BLOCKQUOTE>
+       Once the Raspberry Pi green activity LED is no longer flashing, about 10-15 seconds, it is safe to power off 
+       the layout electronics.</font></p>
+	</BLOCKQUOTE><br>
+
+    <p><font face="Arial" size="5"><b>DnB.pl Mainloop Timing</b></font></p> 
+	<BLOCKQUOTE>
+	<p><font face="Arial">The following shows the timing of the main processing loop when the -z option is 
+	used to enable toggle of the GPIO20_TEST pin. Each bit toggle delimits a section of the main loop code 
+	to aid in code analysis and tuning.</font></p>
+	
+	<p><font face="Arial">Timing for the 1.0 and 1.4 code versions are shown. The additional demands on the
+	RPi CPU in the 1.4 code version has impacted the main loop iteration rate. The grade crossing and 
+	sensor/turnout data consolidations have added the most time; about 8.3 milliseconds. But these data 
+	consolidations are only performed every 10<sup>th</sup> iteration and no noticeable impact to overall
+	responsiveness is observed.</font></p> 
+	
+	<p><font face="Arial">The main loop code includes a static time delay (not shown) to set the iteration period 
+	to about 10 cycles per second. This helps to ensure timely operation of Raspbian and the child processes. Tests 
+	using higher iteration rates consumed more CPU resources while having minimal/no benefit to overall operation.
+	Analysis of the 1.4 code version using the Raspbian CLI <b>top</b> command indicates a 20% to 23% CPU 
+	utilization for the combined D&amp;B related processes. 
+	</font></p>  
+	</BLOCKQUOTE>
+
+    <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+    <A href="Rpi-Timing.jpg" border="0">
+      <IMG SRC=Rpi-Timing.jpg ALT="Rpi-Timing.jpg" width="640" height="400">
+	</A>
+	</TABLE></CENTER><br><br>
+
+    <p><font face="Arial" size="5"><b>RPi microSD Memory Card Backup</b></font></p> 
+	<BLOCKQUOTE>
+	<p><font face="Arial">Use the following procedure to create a backup image of the RPi microSD memory 
+	card. The backup image will contain all required software including the bootable and configured Raspbian 
+	OS, the D&B software, and the required perl modules. The utility program Win32DiskImager is used.
+	<BLOCKQUOTE>
+      1. Install the Win32DiskImager program on a computer with a USB port.<br><br>
+      2. With RPi power off, slide out the RPi microSD card. Note that the microSD card gold fingers 
+      are oriented on the top left side.<br><br>
+      3. Insert the microSD card into a USB adapter and then insert the adapter into the computer USB port.<br><br>
+      4. Launch the Win32DiskImager program.<br><br>
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+      <A href="ImageBackup.png" border="0">
+        <IMG SRC=ImageBackup.png ALT="ImageBackup.png" width="496" height="341">
+	  </A>
+	  </TABLE></CENTER><br>
+	  5. Specify the folder and filename to hold the backup image.<br><br>
+      6. Specify the USB disk device holding the microSD card to be imaged.<br><br>
+      7. Click the Read button to copy the microSD card contents to the specified image file.<br><br>
+	  </BLOCKQUOTE></font></p>  
+	</BLOCKQUOTE>
+
+    <p><font face="Arial" size="5"><b>RPi microSD Memory Card Restore</b></font></p> 
+	<BLOCKQUOTE>
+	<p><font face="Arial">Use the following procedure to restore the RPi microSD memory card or create 
+	a new RPi microSD card from a previously created backup image. Upon completion, the microSD card will 
+	contain all required software including a bootable and configured Raspbian OS, the D&B software, and
+	perl modules. 
+	<BLOCKQUOTE>
+      1. Insert a 32GB microSD card into a USB adapter and then insert the adapter into the computer 
+      USB port.<br><br>
+      2. Launch the Win32DiskImager program.<br><br>
+      <CENTER><TABLE ALIGN=CENTER BORDER=0 WIDTH=50%>
+      <A href="ImageRestore.png" border="0">
+        <IMG SRC=ImageRestore.png ALT="ImageRestore.png" width="496" height="341">
+	  </A>
+	  </TABLE></CENTER><br>
+	  3. Specify the folder and filename holding the previously created backup image.<br><br>
+      4. Specify the USB disk device holding the microSD card to be imaged.<br><br>
+      5. Click the Write button to copy the image file contents to the microSD card. If warning messages
+      are displayed, it is possible that the new microSD card has memory location defects that make it
+      unsuitable for use with the Raspbian OS. Try a different microSD card.<br><br>
+	  6. With RPi power off, orient the microSD card with the gold fingers on the top left side. Then
+	  carefully slide the microSD card into the RPi card holder.<br><br>
+	  </BLOCKQUOTE></font></p>  
+	</BLOCKQUOTE>
+
+	<P><CENTER><IMG SRC=colorbar.gif ALT="Color Bar" width="600" height="1"></CENTER></P>
+      <FONT FACE="Arial" SIZE="2">
+	  <B>Raspberry Pi Control Electronics:</B>
+	  &nbsp; <a href="DnB_RpiOverview.html">Overview</a>
+      &nbsp; <a href="DnB_RpiCode.html">Program Code</a>
+      &nbsp; <a href="DnB_RpiSchematic.html">Schematics</a>
+      &nbsp; <a href="DnB_RpiPhoto.html">Photos</a><br>
+      <BR></FONT>
+	  <P>
+	<P>
+  </BODY>
+</HTML>
