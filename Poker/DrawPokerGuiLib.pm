@@ -3274,10 +3274,18 @@ sub GenOpponent {
    $$Game{'Image'}{'Felt'} = $data;  
    undef $data; 
    
-   # Setup default player images.
+   # Unzip default distribution file if necessary.
+   my($defDir) = join('/', $modelDir, 'default');
+   my($defZip) = join('/', $modelDir, 'default.zip');
+   if (not -d $defDir and -e $defZip) {
+      mkdir($defDir);
+      return 1 if (&UnzipFile($defZip, $defDir));
+      rename $defZip, join('-', $defZip, 'save');
+   }
+   # Setup default player images. 
    unless (defined($main::opt_x)) {
       foreach my $name (@defNames) {
-         $$Game{'Opponent'}{$name}{0} = join("/", $modelDir, 'default', "${name}-0.jpg");
+         $$Game{'Opponent'}{$name}{0} = join("/", $defDir, "${name}-0.jpg");
          &DisplayDebug(2, "GenOpponent $name file: $$Game{'Opponent'}{$name}{0}");
       }
       return 0;
