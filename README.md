@@ -7,18 +7,9 @@ Place the code in a convenient location on your system and use **perl pgm.pl** a
 **env.pl** - Displays the %ENV hash environment variables/values that were inherited from the operating system as part of perl program start.<br/>
 **bin2hex.pl** - Dumps the specified file contents to the console. Hex and its ASCII equivalent characters are displayed.<br/>
 
-### Model Railroad
-**OS: Linux RPi-3**<br/>
-An advanced model railroad control program for automating things like block occupancy detection, track signaling, turnout positioning, and reverse loop polarity. Uses forked processes and provides a barebones webserver for operational status display. RPi-3 and hardware 'hats' interface the layout sensors, turnout servos, and signal indicators. Trackside searchlight semaphore signals utilize a custom build 74HC595 shift register hat. Hardware schematics and layout details are included. 
-
 ### Mp4ToMp3
 **OS: Windows**<br/>
 **Mp4ToMp3.pl** - This program extracts the audio track in an MP4 file and converts it to MP3 using ffmpeg. The audio level can be normalized. A seperate install of ffmpeg is needed if not already part of another windows program. Change the $FFmpeg definition in the program to point to the ffmpeg executable.
-
-### Poker
-**OS: Linux and Windows**<br/>
-**DrawPoker.pl** - Proof of concept five card draw poker game. Linux only. CLI based ANSI color/character cards. Only basic game play is implemented and win/lose checking is incomplete.<br/>
-**DrawPokerGUI.pl** - Improved version of five card draw poker using Perl-tk. Auto-selection of a fixed game table size based on screen resolution. Requires the perl GD module for image sizing. Yeah, perl-tk; but it works.<br/>
 
 ### RecursiveCopy
 **OS: Windows**<br/>
