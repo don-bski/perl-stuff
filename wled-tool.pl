@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  5-28-2025
+# FILE: wled-tool.pl                                                  6-01-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -42,7 +42,7 @@ require Win32::Console::ANSI if ($^O =~ m/Win/);
 use LWP::UserAgent;
 use JSON;
 use Data::Dumper;
-use warnings;
+# use warnings;
 
 # ==============================================================================
 # Global Variables
@@ -219,12 +219,12 @@ sub ReadFile {
    my($FileHandle);
 
    unless (-e $InputFile) {
-      &ColorMessage("*** Error: File not found: $InputFile", "BRIGHT_RED");
+      &ColorMessage("*** Error: File not found: $InputFile", "BRIGHT_RED", '');
       return 1;
    }
    unless (open($FileHandle, '<', $InputFile)) {
       &ColorMessage("*** Error: opening file for read: $InputFile - $!",
-                    "BRIGHT_RED");
+                    "BRIGHT_RED", '');
       return 1;
    }
    @$ArrayPointer = <$FileHandle>;
@@ -267,7 +267,7 @@ sub WriteFile {
 
    unless (open($FileHandle, '>', $OutputFile)) {
       &ColorMessage("*** Error: opening file for write: $OutputFile - $!",
-                    "BRIGHT_RED");
+                    "BRIGHT_RED", '');
       return 1;
    }
    foreach my $line (@$OutputArrayPointer) {
@@ -276,7 +276,7 @@ sub WriteFile {
          $line =~ s/^\s+|\s+$//g;
       }
       unless (print $FileHandle $line, "\n") {
-         &ColorMessage("*** Error: writing file: $OutputFile - $!", "BRIGHT_RED");
+         &ColorMessage("*** Error: writing file: $OutputFile - $!", "BRIGHT_RED", '');
          close($FileHandle);
          return 1;
       }
@@ -332,7 +332,7 @@ sub GetTmpDir {
    $path =~ s/^\s+|\s+$//g;
    print "GetTmpDir: os: $os   path: '$path'\n" if (exists( $main::cliOpts{d} ));
    unless (-d $path) {
-      &ColorMessage("GetTmpDir - Directory not found: $path", "BRIGHT_RED");
+      &ColorMessage("GetTmpDir - Directory not found: $path", "BRIGHT_RED", '');
       return '';
    }
    return $path;
@@ -424,9 +424,9 @@ sub CleanData {
    my $check = join('', @array);
    eval { decode_json($check) };            # Validate json data formatting.
    if ($@) {
-      &ColorMessage("CleanData - Invalid json.", "BRIGHT_RED");
-      &ColorMessage("CleanData - $@", "CYAN");
-      &ColorMessage("CleanData - '$check'", "WHITE");
+      &ColorMessage("CleanData - Invalid json.", "BRIGHT_RED", '');
+      &ColorMessage("CleanData - $@", "CYAN", '');
+      &ColorMessage("CleanData - '$check'", "WHITE", '');
       return 1;
    }
    else {
@@ -479,7 +479,7 @@ sub FormatPresets {
    my @work = split('%', $data);           # Make it so.
    if ($work[0] eq '{') {
       splice (@work, 0, 1);                # Remove standalone open brace.
-      @work[0] = join('', '{', $work[0]);  # Add it to the next record.
+      $work[0] = join('', '{', $work[0]);  # Add it to the next record.
    }
    @$Presets = ();          # Clear preset array for results.
    
@@ -574,9 +574,9 @@ sub PostJson {
    if ($Json ne '') {
       eval { decode_json($Json) };             # Validate json data formatting.
       if ($@) {
-         &ColorMessage("PostJson - Invalid json.", "BRIGHT_RED");
-         &ColorMessage("PostJson - $@", "CYAN");
-         &ColorMessage("PostJson - '$Json'", "WHITE");
+         &ColorMessage("PostJson - Invalid json.", "BRIGHT_RED", '');
+         &ColorMessage("PostJson - $@", "CYAN", '');
+         &ColorMessage("PostJson - '$Json'", "WHITE", '');
          $exitCode = 1;
       }
       else {
@@ -588,21 +588,21 @@ sub PostJson {
             last if ($response->is_success);
             $retry--;
             if ($retry == 0) {
-               &ColorMessage("HTTP POST $Url", "BRIGHT_RED");
-               &ColorMessage("HTTP POST error: " . $response->code, "BRIGHT_RED");
+               &ColorMessage("HTTP POST $Url", "BRIGHT_RED", '');
+               &ColorMessage("HTTP POST error: " . $response->code, "BRIGHT_RED", '');
                &ColorMessage("HTTP POST error: " . $response->message .
-                             "\n","BRIGHT_RED");
+                             "\n","BRIGHT_RED", '');
                $exitCode = 1;
             }
             else {
-               &ColorMessage("PostJson - POST retry ...", "CYAN");
+               &ColorMessage("PostJson - POST retry ...", "CYAN", '');
                sleep 1;       # Wait a bit for network stabilization.
             }
          }
       }
    }
    else {
-      &ColorMessage("PostJson - No JSON data specified.", "BRIGHT_RED");
+      &ColorMessage("PostJson - No JSON data specified.", "BRIGHT_RED", '');
       $exitCode = 1;
    }
    undef($userAgent);
@@ -654,9 +654,9 @@ sub PostUrl {
       my $check = join('', @data);
       eval { decode_json($check) };             # Validate json data formatting.
       if ($@) {
-         &ColorMessage("PostUrl - Invalid json: $File", "BRIGHT_RED");
-         &ColorMessage("PostUrl - $@", "CYAN");
-#         &ColorMessage("PostUrl - '$check'", "WHITE");
+         &ColorMessage("PostUrl - Invalid json: $File", "BRIGHT_RED", '');
+         &ColorMessage("PostUrl - $@", "CYAN", '');
+#         &ColorMessage("PostUrl - '$check'", "WHITE", '');
          $exitCode = 1;
       }
       else {
@@ -679,7 +679,7 @@ sub PostUrl {
             # All entries must be paired; offset and color code.
             $exitCode = 1 if ((scalar(@codes) % 2) == 1);
             if ($exitCode == 1) {
-               &ColorMessage("PostUrl - Invalid palette: $check", "BRIGHT_RED");
+               &ColorMessage("PostUrl - Invalid palette: $check", "BRIGHT_RED", '');
                return $exitCode;
             }
          }
@@ -693,21 +693,21 @@ sub PostUrl {
             last if ($response->is_success);
             $retry--;
             if ($retry == 0) {
-               &ColorMessage("HTTP POST $Url", "BRIGHT_RED");
-               &ColorMessage("HTTP POST error: " . $response->code, "BRIGHT_RED");
+               &ColorMessage("HTTP POST $Url", "BRIGHT_RED", '');
+               &ColorMessage("HTTP POST error: " . $response->code, "BRIGHT_RED", '');
                &ColorMessage("HTTP POST error: " . $response->message .
-                             "\n","BRIGHT_RED");
+                             "\n","BRIGHT_RED", '');
                $exitCode = 1;
             }
             else {
-               &ColorMessage("PostUrl - POST retry ...", "CYAN");
+               &ColorMessage("PostUrl - POST retry ...", "CYAN", '');
                sleep 1;       # Wait a bit for network stabilization.
             }
          }
       }
    }
    else {
-      &ColorMessage("PostUrl - File not found: $File", "BRIGHT_RED");
+      &ColorMessage("PostUrl - File not found: $File", "BRIGHT_RED", '');
       $exitCode = 1;
    }
    undef($userAgent);
@@ -764,11 +764,11 @@ sub GetUrl {
          print "GetUrl: check: '$check'\n" if (exists( $main::cliOpts{d} ));
          eval { decode_json($check) };     # Validate json data formatting.
          if ($@) {
-            &ColorMessage("GetUrl - Invalid json data. Retry Get ...", "CYAN");
+            &ColorMessage("GetUrl - Invalid json data. Retry Get ...", "CYAN", '');
             $retry--;
             if ($retry == 0) { 
-               &ColorMessage("GetUrl - $@", "WHITE");
-#               &ColorMessage("GetUrl - '$check'", "WHITE");
+               &ColorMessage("GetUrl - $@", "WHITE", '');
+#               &ColorMessage("GetUrl - '$check'", "WHITE", '');
                $exitCode = 1;
             }
             else {
@@ -791,14 +791,14 @@ sub GetUrl {
          else {  
             $retry--;
             if ($retry == 0) { 
-               &ColorMessage("HTTP GET $Url", "BRIGHT_RED");
-               &ColorMessage("HTTP GET error code: " . $response->code, "BRIGHT_RED");
+               &ColorMessage("HTTP GET $Url", "BRIGHT_RED", '');
+               &ColorMessage("HTTP GET error code: " . $response->code, "BRIGHT_RED", '');
                &ColorMessage("HTTP GET error message: " . $response->message .
-                             "\n","BRIGHT_RED");
+                             "\n","BRIGHT_RED", '');
                $exitCode = 1;
             }
             else {
-               &ColorMessage("GetUrl - GET retry ...", "CYAN");
+               &ColorMessage("GetUrl - GET retry ...", "CYAN", '');
                sleep 1;       # Wait a bit for network stabilization.
             }
          }
@@ -871,23 +871,23 @@ sub AuditionPresets {
    # Show user the available presets and associated Id.
    my $col = 0;   my $cols = 3;
    my $line = '=' x 75;
-   &ColorMessage("\n$line", "WHITE");
-   &ColorMessage("WLED presets available for audition:", "WHITE");
+   &ColorMessage("\n$line", "WHITE", '');
+   &ColorMessage("WLED presets available for audition:", "WHITE", '');
    foreach my $id (sort {$a <=> $b} keys(%presetIds)) {
       &ColorMessage('  ' . substr("  $id", -3) . " ", "WHITE", 'nocr');
       &ColorMessage(substr($presetIds{$id}{'name'} . ' ' x 20, 0, 20), 
                            $presetIds{$id}{'color'}, 'nocr');
       $col++;
       if ($col == $cols) {
-         &ColorMessage("", "CYAN");
+         &ColorMessage("", "CYAN", '');
          $col = 0;
       }
    }
-   &ColorMessage("", "CYAN") if ($col != 0);
-   &ColorMessage("For a custom playlist enter: p,<n>,<n>,d,<s>", "WHITE");
+   &ColorMessage("", "CYAN", '') if ($col != 0);
+   &ColorMessage("For a custom playlist enter: p,<n>,<n>,d,<s>", "WHITE", '');
    &ColorMessage("LED Brightness: b <n> (1-255) or b +<n> or b -<n>       " .
-                 "Current: $s_ref->{'bri'}", "WHITE");
-   &ColorMessage("$line", "WHITE");
+                 "Current: $s_ref->{'bri'}", "WHITE", '');
+   &ColorMessage("$line", "WHITE", '');
 
    # Get user input and process.
    while (1) {
@@ -915,7 +915,7 @@ sub AuditionPresets {
             my $valid = 1;
             foreach my $id (@pset) {
                unless (exists($presetIds{$id})) {
-                  &ColorMessage("Invalid preset Id: $id", "BRIGHT_RED");
+                  &ColorMessage("Invalid preset Id: $id", "BRIGHT_RED", '');
                   $valid = 0;
                   last;
                }
@@ -931,7 +931,7 @@ sub AuditionPresets {
          else {
             my $msg = "Active preset is: $s_ref->{'ps'}";
             $msg = join(' ', $msg, '(default)') if ($s_ref->{'ps'} == -1);
-            &ColorMessage($msg, "CYAN");
+            &ColorMessage($msg, "CYAN", '');
          }
       }
       # ==========
@@ -943,12 +943,12 @@ sub AuditionPresets {
             $s_ref->{'ps'} = $id;
          }
          else {
-            &ColorMessage("Invalid preset Id: $id", "BRIGHT_RED");
+            &ColorMessage("Invalid preset Id: $id", "BRIGHT_RED", '');
          }
       }
       # ==========
       elsif ($preset =~ m/^b$/i) {           # b with no value
-         &ColorMessage("LED brightness is: $s_ref->{'bri'}", "CYAN");
+         &ColorMessage("LED brightness is: $s_ref->{'bri'}", "CYAN", '');
       }
       elsif ($preset =~ m/^b\s*([\+|\-]*[0-9]+)/i) {   # User wants brightness change.
          my $val = $1;   my $noSet = 0;
@@ -964,23 +964,23 @@ sub AuditionPresets {
                $s_ref->{'bri'} = $val;     # absolute
             }
             else {
-               &ColorMessage("Invalid brightness value: $val", "BRIGHT_RED");
+               &ColorMessage("Invalid brightness value: $val", "BRIGHT_RED", '');
                $noSet = 1;
             }
          }
          if ($noSet == 0) {
             last if (&PostJson(join("/", $WledUrl, "json/state"), 
                      qq({"on":true,"bri": $s_ref->{'bri'}})));
-            &ColorMessage("LED brightness set to: $s_ref->{'bri'}", "CYAN");
+            &ColorMessage("LED brightness set to: $s_ref->{'bri'}", "CYAN", '');
          }
       }
       # ==========
       else {
-         &ColorMessage("Invalid entry: '$preset'", "BRIGHT_RED");
+         &ColorMessage("Invalid entry: '$preset'", "BRIGHT_RED", '');
       }
       sleep 1;
    }
-   &ColorMessage("", "WHITE");
+   &ColorMessage("", "WHITE", '');
    return 0;
 }
 
@@ -1031,7 +1031,7 @@ sub JsonData {
    if (-e $File) {
    }
    else {
-      &ColorMessage("JsonData - File not found: $File", "BRIGHT_RED");
+      &ColorMessage("JsonData - File not found: $File", "BRIGHT_RED", '');
       return 1;
    }
    return 0;
@@ -1049,8 +1049,8 @@ foreach my $op (keys(%cliOpts)) {
 # ==========
 # Display program help if -h specified or no other option.
 if (exists( $cliOpts{h} ) or $allOpts eq '') {
-   &ColorMessage("\nNo program option specified.", "BRIGHT_RED") if ($allOpts eq '');
-   &ColorMessage("$UsageText", "WHITE");
+   &ColorMessage("\nNo program option specified.", "BRIGHT_RED", '') if ($allOpts eq '');
+   &ColorMessage("$UsageText", "WHITE", '');
    exit(0);  
 }
 
@@ -1063,18 +1063,18 @@ if (exists( $cliOpts{v} )) {
       my $check = join('', @data);
       eval { decode_json($check) };             # Validate json data formatting.
       if ($@) {
-         &ColorMessage("Invalid json: $cliOpts{v}", "BRIGHT_RED");
-         &ColorMessage("$@", "CYAN");
-#         &ColorMessage("'$check'", "WHITE");
+         &ColorMessage("Invalid json: $cliOpts{v}", "BRIGHT_RED", '');
+         &ColorMessage("$@", "CYAN", '');
+#         &ColorMessage("'$check'", "WHITE", '');
          exit(1)
       }
       else {
-         &ColorMessage("Valid json content in: $cliOpts{v}", "WHITE");
+         &ColorMessage("Valid json content in: $cliOpts{v}", "WHITE", '');
       }
       exit(0);
    }
    else {
-      &ColorMessage("File not found: $cliOpts{v}", "BRIGHT_RED");
+      &ColorMessage("File not found: $cliOpts{v}", "BRIGHT_RED", '');
       exit(1);
    }
 }
@@ -1090,9 +1090,9 @@ if (exists( $cliOpts{f} )) {
       my $check = join('', @presetData);
       eval { decode_json($check) };             # Validate json data formatting.
       if ($@) {
-         &ColorMessage("Invalid json: $cliOpts{f}", "BRIGHT_RED");
-         &ColorMessage("$@", "CYAN");
-#         &ColorMessage("'$check'", "WHITE");
+         &ColorMessage("Invalid json: $cliOpts{f}", "BRIGHT_RED", '');
+         &ColorMessage("$@", "CYAN", '');
+#         &ColorMessage("'$check'", "WHITE", '');
          exit(1)
       }
       # Reformat data.
@@ -1101,9 +1101,9 @@ if (exists( $cliOpts{f} )) {
       $check = join('', @presetData);
       eval { decode_json($check) };             # Validate json data formatting.
       if ($@) {
-         &ColorMessage("Reformatted json is invalid.", "BRIGHT_RED");
-         &ColorMessage("$@", "CYAN");
-         &ColorMessage("'$check'", "WHITE");
+         &ColorMessage("Reformatted json is invalid.", "BRIGHT_RED", '');
+         &ColorMessage("$@", "CYAN", '');
+         &ColorMessage("'$check'", "WHITE", '');
          exit(1) unless (exists( $cliOpts{d} ));
       }
       if (exists( $cliOpts{d} )) {
@@ -1111,11 +1111,11 @@ if (exists( $cliOpts{f} )) {
       }
       else {
          exit(1) if (&WriteFile($cliOpts{f}, \@presetData, 'trim'));
-         &ColorMessage("Preset file $cliOpts{f} successfully reformatted.", "WHITE");
+         &ColorMessage("Preset file $cliOpts{f} successfully reformatted.", "WHITE", '');
       }
    }
    else {
-      &ColorMessage("File not found: $cliOpts{f}", "BRIGHT_RED");
+      &ColorMessage("File not found: $cliOpts{f}", "BRIGHT_RED", '');
    }
    exit(0);
 }
@@ -1127,7 +1127,7 @@ if (exists( $cliOpts{e} )) {
       $WledIp = join('.', $1, $2, $3, $4);
    }
    else {
-      &ColorMessage("Invalid IP specified: $cliOpts{e}", "BRIGHT_RED");
+      &ColorMessage("Invalid IP specified: $cliOpts{e}", "BRIGHT_RED", '');
       exit(1);
    }
 }
@@ -1137,14 +1137,14 @@ if (exists( $cliOpts{e} )) {
 if ($^O =~ m/Win/) {                            # Windows environment?
    my $resp = `ping -w 1000 -n 1 -l 64 $WledIp 2>&1`;   # Windows ping
    unless ($resp =~ m/Reply from $WledIp/m) {
-      &ColorMessage("No ping response from IP: $WledIp", "BRIGHT_RED");
+      &ColorMessage("No ping response from IP: $WledIp", "BRIGHT_RED", '');
       exit(1);
    }
 }
 else {
    my $resp = `ping -w 1 -c 1 -s 64 $WledIp 2>&1`;      # Linux ping
    unless ($resp =~ m/\d+ bytes from $WledIp/m) {
-      &ColorMessage("No ping response from IP: $WledIp", "BRIGHT_RED");
+      &ColorMessage("No ping response from IP: $WledIp", "BRIGHT_RED", '');
       exit(1);
    }
 }
@@ -1163,7 +1163,7 @@ if (exists( $cliOpts{p} )) {
    exit(1) if (&GetUrl(join("/", $WledUrl, "presets.json"), \@resp));
    exit(1) if (&CleanData(\@resp));       # Remove extra whitespace.
    exit(1) if (&WriteFile($cliOpts{p}, \@resp, 'trim'));
-   &ColorMessage("Preset backup $cliOpts{p} successfully created.", "WHITE");
+   &ColorMessage("Preset backup $cliOpts{p} successfully created.", "WHITE", '');
 }
 
 # ==========
@@ -1188,13 +1188,13 @@ if (exists( $cliOpts{P} )) {
          exit(1) if (&WriteFile($file, \@data, 'trim'));
       }
       exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $file));
-      &ColorMessage("Presets successfully restored from $cliOpts{P}", "WHITE");
+      &ColorMessage("Presets successfully restored from $cliOpts{P}", "WHITE", '');
       unlink $file if ($file ne $cliOpts{P});   # Delete tmp file.
       # If -r or -b options were also specified, don't exit here.
       exit(0) unless ( exists($cliOpts{r}) or exists($cliOpts{C}) );
    }
    else {
-      &ColorMessage("File not found: $cliOpts{P}", "BRIGHT_RED");
+      &ColorMessage("File not found: $cliOpts{P}", "BRIGHT_RED", '');
       exit(1);
    }
 }
@@ -1206,7 +1206,7 @@ if (exists( $cliOpts{c} )) {
    $cliOpts{c} = $Sections{'configuration'} if ($cliOpts{c} eq '-');
    exit(1) if (&GetUrl(join("/", $WledUrl, "cfg.json"), \@resp));
    exit(1) if (&WriteFile($cliOpts{c}, \@resp, "trim"));
-   &ColorMessage("Configuration backup $cliOpts{c} successfully created.", "WHITE");
+   &ColorMessage("Configuration backup $cliOpts{c} successfully created.", "WHITE", '');
    exit(0);
 }
 
@@ -1232,13 +1232,13 @@ if (exists( $cliOpts{C} )) {
          exit(1) if (&WriteFile($file, \@data, "trim"));
       }
       exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $file));
-      &ColorMessage("Configuration successfully restored from $cliOpts{C}", "WHITE");
+      &ColorMessage("Configuration successfully restored from $cliOpts{C}", "WHITE", '');
       unlink $file if ($file ne $cliOpts{C});         # Delete tmp file.
-      &ColorMessage("WLED auto-reset. Wait ~15 sec for network reconnect.", "WHITE");
+      &ColorMessage("WLED auto-reset. Wait ~15 sec for network reconnect.", "WHITE", '');
       exit(0);
    }
    else {
-      &ColorMessage("File not found: $cliOpts{C}", "BRIGHT_RED");
+      &ColorMessage("File not found: $cliOpts{C}", "BRIGHT_RED", '');
       exit(1);
    }
 }
@@ -1252,27 +1252,27 @@ if (exists( $cliOpts{a} )) {
    foreach my $section ("configuration","presets","palettes") {
       if ($section eq 'palettes') {
          push (@data, "== $section ==");
-         &ColorMessage("$section", "WHITE");
+         &ColorMessage("$section", "WHITE", '');
          for (my $x = 0; $x < 10; $x++) {
             my $pStr = join('', 'palette', $x, '.json');
             my $url = join("/", $WledUrl, $pStr);
             my $code = &GetUrl($url, \@resp);
             if ($code == 0) {
                push (@data, $pStr, @resp);
-               &ColorMessage("   $pStr", "WHITE");
+               &ColorMessage("   $pStr", "WHITE", '');
             }
          }
       }
       else {
          push (@data, "== $section ==");
-         &ColorMessage("$section", "WHITE");
+         &ColorMessage("$section", "WHITE", '');
          exit(1) if (&GetUrl(join("/", $WledUrl, $Sections{$section}), \@resp));
          push (@data, @resp, '');
       }
    }
    push (@data, '', '== eof ==');
    exit(1) if (&WriteFile($cliOpts{a}, \@data, 'trim'));
-   &ColorMessage("Backup $cliOpts{a} successfully created.", "WHITE");
+   &ColorMessage("Backup $cliOpts{a} successfully created.", "WHITE", '');
    exit(0);
 }
 
@@ -1301,7 +1301,7 @@ if (exists( $cliOpts{A} )) {
             my $name = join('/', &GetTmpDir(), $Sections{$section});
             exit(1) if (&WriteFile($name, \@secData, 'trim'));
             exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $name));
-            &ColorMessage("$Sections{$section} data successfully sent.", "WHITE");
+            &ColorMessage("$Sections{$section} data successfully sent.", "WHITE", '');
             unlink $name;
          }
          elsif ($section eq 'palettes') {
@@ -1311,7 +1311,7 @@ if (exists( $cliOpts{A} )) {
                   my @array = ("$secData[$x +1]");
                   exit(1) if (&WriteFile($name, \@array, 'trim'));
                   exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $name));
-                  &ColorMessage("$secData[$x] data successfully sent.", "WHITE");
+                  &ColorMessage("$secData[$x] data successfully sent.", "WHITE", '');
                   unlink $name;
                }
             }
@@ -1319,10 +1319,10 @@ if (exists( $cliOpts{A} )) {
       }
    }
    else {
-      &ColorMessage("Invalid file: $cliOpts{A}", "BRIGHT_RED");
+      &ColorMessage("Invalid file: $cliOpts{A}", "BRIGHT_RED", '');
       exit(1);
    }
-   &ColorMessage("WLED auto-reset. Wait ~15 sec for network reconnect.", "WHITE");
+   &ColorMessage("WLED auto-reset. Wait ~15 sec for network reconnect.", "WHITE", '');
    exit(0);
 }
 
@@ -1339,12 +1339,12 @@ if (exists( $cliOpts{g} )) {
          if ($code == 0) {
             my $pathFile = join('/', $cliOpts{g}, $pStr);
             exit(1) if (&WriteFile($pathFile, \@resp, 'trim'));
-            &ColorMessage("Palette backup: $pathFile", "WHITE");
+            &ColorMessage("Palette backup: $pathFile", "WHITE", '');
          }
       }
    }
    else {
-      &ColorMessage("Directory not found: $cliOpts{g}", "BRIGHT_RED");
+      &ColorMessage("Directory not found: $cliOpts{g}", "BRIGHT_RED", '');
    }
    exit(0);
 }
@@ -1366,10 +1366,10 @@ if (exists( $cliOpts{G} )) {
       $file =~ s/^\s+|\s+$//g;
       if (-e $file) {
          exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $file));
-         &ColorMessage("$file data successfully sent.", "WHITE");
+         &ColorMessage("$file data successfully sent.", "WHITE", '');
       }
       else {
-         &ColorMessage("File not found: $file", "BRIGHT_RED");
+         &ColorMessage("File not found: $file", "BRIGHT_RED", '');
       }
    }
    exit(0);
@@ -1388,8 +1388,8 @@ if (exists( $cliOpts{l} ) or exists( $cliOpts{w} )) {
          push (@data, @resp, '');
       }
       else {
-         &ColorMessage("WLED $url", "CYAN");
-         &ColorMessage("@resp \n", "WHITE");
+         &ColorMessage("WLED $url", "CYAN", '');
+         &ColorMessage("@resp \n", "WHITE", '');
       }
    }
    # Use the globally defined %Sections hash for URL mapping.
@@ -1401,8 +1401,8 @@ if (exists( $cliOpts{l} ) or exists( $cliOpts{w} )) {
          push (@data, @resp, '');
       }
       else {
-         &ColorMessage("WLED $url", "CYAN");
-         &ColorMessage("@resp", "WHITE");
+         &ColorMessage("WLED $url", "CYAN", '');
+         &ColorMessage("@resp", "WHITE", '');
       }
    }
    # Have to brute force get of the palette data. Currently no way to know
@@ -1417,13 +1417,13 @@ if (exists( $cliOpts{l} ) or exists( $cliOpts{w} )) {
          push (@data, @resp, '');
       }
       else {
-         &ColorMessage("WLED $url", "CYAN");
-         &ColorMessage("@resp", "WHITE");
+         &ColorMessage("WLED $url", "CYAN", '');
+         &ColorMessage("@resp", "WHITE", '');
       }
    }
    if (exists( $cliOpts{w} )) {
       exit(1) if (&WriteFile($cliOpts{w}, \@data, 'trim'));
-      &ColorMessage("$cliOpts{w} successfully created.", "WHITE");
+      &ColorMessage("$cliOpts{w} successfully created.", "WHITE", '');
    }
    exit(0);
 }
@@ -1456,11 +1456,11 @@ if (exists( $cliOpts{x} )) {
             exit(1) if (&WriteFile($file, \@json, 'trim'));
          }
          exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $file));
-         &ColorMessage("$file data successfully sent.", "WHITE");
+         &ColorMessage("$file data successfully sent.", "WHITE", '');
          unlink $file if (scalar @json != scalar @data);   # Delete tmp file.
       }
       else {
-         &ColorMessage("File not found: $file", "BRIGHT_RED");
+         &ColorMessage("File not found: $file", "BRIGHT_RED", '');
       }
    }
 }
@@ -1471,7 +1471,7 @@ if (exists( $cliOpts{r} )) {
    sleep 1 if (exists( $cliOpts{P} ));   # Wait for WLED to process presets restore. 
    my @resp = ();
    exit(1) if (&GetUrl(join("/", $WledUrl, 'win&RB'), \@resp));
-   &ColorMessage("Reset sent to WLED. Wait ~15 sec for network reconnect.", "WHITE");
+   &ColorMessage("Reset sent to WLED. Wait ~15 sec for network reconnect.", "WHITE", '');
 }
 
 exit(0);
