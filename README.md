@@ -1,6 +1,6 @@
 # perl-stuff
 This repository contains some perl based programs that, at the time, were written to address a general need or function as a learning tool. While not written to the highest of perl coding standards and best practices, they might be useful in one form or another. The larger programs have a fair amount of documentation included in the code. The programs should work with most perl versions. Linux distributions generally include a useable perl version. My Windows environment uses ActiveState perl 5.16 but Strawberry perl will also work.<br/><br/>
-Place the code in a convenient location on your system and use **perl pgm.pl** at the command line to run. Use **cpanm** or **MCPAN** at your OS command line to install any needed perl modules. Use each program's **-h** option to display it's usage text. All programs are provided as-is and function as described. You may need to modify them for the needs of your operating environment.
+Place the code in a convenient location on your system and use **perl pgm.pl** at the operating system command line to run. Use **cpanm** or **MCPAN** at your OS command line to install any needed perl modules. Use each program's **-h** option to display it's usage text. All programs are provided as-is and function as described. You may need to modify them for the needs of your operating environment.
 
 ### OS: Linux and Windows
 **env.pl** - Displays the %ENV hash environment variables/values that were inherited from the operating system as part of perl program start.<br/>
