@@ -199,7 +199,7 @@ sub ProcessKeypadInput {
    my(%keySub) = ('279151126' => \&delete, '127' => \&backSpace, '279165' => \&upArrow,
       '279166' => \&downArrow, '279168' => \&leftArrow, '279167' => \&rightArrow);
                   
-   # This hash defines cursor move and edit ANSI sequences. Not all are used
+   # This hash defines cursor move and edit ANSI sequences. Not all are used.
    # For details, see https://en.wikipedia.org/wiki/ANSI_escape_code             
    my(%cursor) = ('left' => "\e[D", 'right' => "\e[C", 'up' => "\e[A", 
                   'down' => "\e[B", 'clrLeft' => "\e[1K", 'clrRight' => "\e[0K",
@@ -256,9 +256,12 @@ sub ProcessKeypadInput {
       if ($#{ $$InWork{'history'} } >= 0) {     # Ignore key if no history.
          return 0 if ($$InWork{'hptr'} == 0);   # Ignore key if at min. 
          $$InWork{'inbuf'} = ${ $$InWork{'history'} }[ --$$InWork{'hptr'} ];
-         $$InWork{'iptr'} = length($$InWork{'inbuf'});  # iptr to end-of-line
-         my $line = join('', $$Cursor{'delLine'}, $$InWork{'inbuf'});
-         print $line;
+         my $plen = 0;
+         $plen = length($$InWork{'prompt'}) if (exists($$InWork{'prompt'}));
+         $$InWork{'iptr'} = length($$InWork{'inbuf'});  # iptr to end-of-line  
+         print $$Cursor{'delLine'};
+         &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');         
+         print $$InWork{'inbuf'};
       }
       return 0;
    }
@@ -270,9 +273,12 @@ sub ProcessKeypadInput {
       if ($#{ $$InWork{'history'} } >= 0) {  # Ignore key if no history.
          return 0 if ($$InWork{'hptr'} == $#{ $$InWork{'history'} }); # Ignore if at max.
          $$InWork{'inbuf'} = ${ $$InWork{'history'} }[ ++$$InWork{'hptr'} ];
-         $$InWork{'iptr'} = length($$InWork{'inbuf'});  # iptr to end-of-line
-         my $line = join('', $$Cursor{'delLine'}, $$InWork{'inbuf'});
-         print $line;
+         my $plen = 0;
+         $plen = length($$InWork{'prompt'}) if (exists($$InWork{'prompt'}));
+         $$InWork{'iptr'} = length($$InWork{'inbuf'});  # iptr to end-of-line  
+         print $$Cursor{'delLine'};
+         &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');         
+         print $$InWork{'inbuf'};
       }
       return 0;
    }
@@ -323,7 +329,10 @@ sub ProcessKeypadInput {
 #    %InWork (
 #       'inbuf'  => '',    Buffer used to accumulate keyboard input.
 #       'iptr' => 0,       inbuf position. Used with console display.
+#       'prompt' => '',    Optional: User input prompt string.
+#       'pcol' => '',      Optional: Color for prompt string.       
 #       ------             These keys are created at runtime.
+#       'pflag' => 0,      Prompt user if undef or 0.
 #       'inseq' => '',     Holder for keypad escape sequence. 
 #       'history' => [],   History array. Used with up/down arrow keys.
 #       'hptr' => 0        History position. Used with up/down arrow keys.
@@ -355,6 +364,14 @@ sub ProcessKeypadInput {
 sub GetKeyboardInput {
    my($InWork) = @_;
 
+   # Output user prompt if necessary.
+   if (exists($$InWork{'prompt'})) {
+      $$InWork{'pflag'} = 0 unless (exists($$InWork{'pflag'}));
+      unless ($$InWork{'pflag'} == 1) {
+         &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');
+         $$InWork{'pflag'} = 1;
+      }
+   }
    while (defined($char = ReadKey(-1))) {     # Get user input.
       &DisplayDebug("ProcessKeyboardInput: char: '" . ord($char) . "'");
       
@@ -392,6 +409,7 @@ sub GetKeyboardInput {
             # Add \n to inbuf and print on console.
             $$InWork{'inbuf'} = join('', $$InWork{'inbuf'}, $char);
             $$InWork{'iptr'}++;
+            $$InWork{'pflag'} = 0;   # Enable prompt output next call.
             print $char;
             return 1;        # Return input available to caller.
          }
@@ -420,7 +438,8 @@ foreach my $sig ('INT','QUIT','TERM','ABRT','STOP','KILL','HUP') {
 
 # ==========
 # Setup the input working hash. See &GetKeyboardInput description for details.
-my %inWork = ('inbuf' => '','iptr' => 0);
+my %inWork = ('inbuf' => '','iptr' => 0, 'prompt' => "$ExecutableName -> ",
+              'pcol' => 'BRIGHT_GREEN');
 ReadMode('cbreak');                # Start readkey input processing.
 
 my $runLoop = 1;
