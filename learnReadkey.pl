@@ -256,8 +256,6 @@ sub ProcessKeypadInput {
       if ($#{ $$InWork{'history'} } >= 0) {     # Ignore key if no history.
          return 0 if ($$InWork{'hptr'} == 0);   # Ignore key if at min. 
          $$InWork{'inbuf'} = ${ $$InWork{'history'} }[ --$$InWork{'hptr'} ];
-         my $plen = 0;
-         $plen = length($$InWork{'prompt'}) if (exists($$InWork{'prompt'}));
          $$InWork{'iptr'} = length($$InWork{'inbuf'});  # iptr to end-of-line  
          print $$Cursor{'delLine'};
          &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');         
@@ -273,8 +271,6 @@ sub ProcessKeypadInput {
       if ($#{ $$InWork{'history'} } >= 0) {  # Ignore key if no history.
          return 0 if ($$InWork{'hptr'} == $#{ $$InWork{'history'} }); # Ignore if at max.
          $$InWork{'inbuf'} = ${ $$InWork{'history'} }[ ++$$InWork{'hptr'} ];
-         my $plen = 0;
-         $plen = length($$InWork{'prompt'}) if (exists($$InWork{'prompt'}));
          $$InWork{'iptr'} = length($$InWork{'inbuf'});  # iptr to end-of-line  
          print $$Cursor{'delLine'};
          &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');         
