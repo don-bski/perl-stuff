@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: learnReadkey.pl                                               6-13-2025
+# FILE: learnReadkey.pl                                               6-27-2025
 #
 # SERVICES: Learning tool for ANSI and keyboard input handling.  
 #
@@ -408,6 +408,9 @@ sub GetKeyboardInput {
             $$InWork{'pflag'} = 0;   # Enable prompt output next call.
             print $char;
             return 1;        # Return input available to caller.
+         }
+         else {
+            &ColorMessage("\n$$InWork{'prompt'}", $$InWork{'pcol'}, 'nocr');
          }
       }
       else {   # Insert character at iptr.
