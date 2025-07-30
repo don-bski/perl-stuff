@@ -1,4 +1,4 @@
-**WledLibrarian.pl** 
+**WledLibrarian.pl** <br/>
 A simple WLED preset librarian with old school CLI user interface. It is used to import WLED 
 presets as individual entities into a database. These preset data can be tagged and grouped by 
 the user as needed. For example, 'xmas' might identify the presets used in a holiday display. 
@@ -15,4 +15,4 @@ The program reformats the preset JSON during import to improve user readability.
 with a number of LED strip types, primarily WS2815, and ESP32. Other hardware combinations may reveal 
 errors due to untested WLED json keys. A CLI option is available to disable this processing.
 <br/><br/>
-<img src="librarian.png" alt="screenshot" width="500"/>
+<img src="librarian.png" alt="screenshot" width="600"/>
