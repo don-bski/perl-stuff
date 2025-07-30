@@ -9,9 +9,9 @@ The program is currently beta release code. It was developed/tested primarily in
 cursory tested in the Windows environment. Launch the program and enter **Help** for operational 
 details.
 
-Coded in Perl, the librarian utilizes the DBD:SQLite module which is a self-contained RDBMS database. 
-Get it from [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite). (See Install Instructions). Librarian 
-commands provide the database interfacing functions. SQLite provided tools, e.g. sqlite3, 
+Coded in Perl, the librarian utilizes the DBD:SQLite module 
+([DBD::SQLite](https://metacpan.org/pod/DBD::SQLite)) which is a self-contained RDBMS database. 
+Librarian commands provide the database interfacing functions. SQLite provided tools, e.g. sqlite3, 
 can also be used to access/modify the database file. The librarian code performs a database check 
 during startup. It will report an error and terminate if the expected tables and their columns 
 are not present. 
