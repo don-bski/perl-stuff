@@ -11,7 +11,7 @@ for operational details.
 
 Coded in Perl, the librarian utilizes the [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite) 
 module which is a self-contained RDBMS database. Librarian commands provide the database 
-interfacing functions. [SQLite-tools with command-line shell](https://www.sqlite.org/), can 
+interfacing functions. [SQLite-tools command-line shell](https://www.sqlite.org/), can 
 also be used to access/modify the database if you are familiar with SQL. The librarian code 
 performs a database check during startup. It will report an error and terminate if the expected tables and their columns are not present. 
 
