@@ -11,9 +11,10 @@ details.
 
 Coded in Perl, the librarian utilizes the  [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite) 
 module which is a self-contained RDBMS database. Librarian commands provide the database 
-interfacing functions. SQLite provided tools, e.g. sqlite3, can also be used to access/modify 
-the database file. The librarian code performs a database check during startup. It will report 
-an error and terminate if the expected tables and their columns are not present. 
+interfacing functions. [SQLite-tools](https://www.sqlite.org/), can also be used to access/modify 
+the database if you are familiar with SQL syntax. The librarian code performs a database check 
+during startup. It will report an error and terminate if the expected tables and their columns 
+are not present. 
 
 The user is prompted to create a new empty database if an existing database file is not found. A 
 database file that includes presets, wled_librarian.dbs.zip, is included in this archive. Unzip it
