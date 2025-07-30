@@ -6,7 +6,8 @@ Presets can be selected ad-hoc or by tag/group word for export to a WLED presets
 directly to WLED over WIFI. 
 
 The program is currently beta release code. It was developed and tested primarily in Linux. 
-Launch the program and enter **Help** for operational details.
+Windows environment development is inprogress. Launch the program and enter **Help** for 
+operational details. 
 
 Coded in Perl, the librarian utilizes the [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite) 
 module which is a self-contained RDBMS database. Librarian commands provide the database 
