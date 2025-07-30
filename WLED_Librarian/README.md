@@ -1,4 +1,4 @@
-*WledLibrarian.pl* <br/>
+##WledLibrarian.pl## <br/>
 A simple WLED preset librarian with old school CLI user interface. It is used to import WLED 
 presets as individual entities into a database. These preset data can be tagged and grouped by 
 the user as needed. For example, 'xmas' might identify the presets used in a holiday display. 
