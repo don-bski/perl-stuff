@@ -5,11 +5,19 @@ the user as needed. For example, 'xmas' might identify the presets used in a hol
 Presets can be selected ad-hoc or by tag/group word for export to a WLED presets file or 
 directly to WLED over WIFI. 
 
+The program is currently beta release code. It was developed/tested primarily in Linux and 
+cursory tested in the Windows environment. Launch the program and enter **Help** for operational 
+details.
+
 Coded in Perl, the librarian utilizes the DBD:SQLite module which is a self-contained RDBMS database. 
 Librarian commands provide the database interfacing functions. SQLite provided tools, e.g. sqlite3, 
 can also be used to access/modify the database file.The librarian code performs a database check 
 during startup. It will report an error and terminate if the expected tables and their columns 
-are not present.
+are not present. 
+
+The user is prompted to create a new empty database if an existing database file is not found. A 
+database file that includes presets, wled_librarian.dbs.zip, is included in this archive. Unzip it
+in the working directory for use if desired.
 
 The program reformats the preset JSON during import to improve user readability. This has been tested 
 with a number of LED strip types, primarily WS2815, and ESP32. Other hardware combinations may reveal 
