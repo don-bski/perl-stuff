@@ -900,11 +900,13 @@ sub ShowCmdHelp {
          &ColorMessage("The program has minimal operational guardrails. If told to delete a preset,", "WHITE", '');
          &ColorMessage("beyond a simple warning, it will do so. Use with care.\n", "WHITE", '');
          &ColorMessage("The following options can be specified on the program start CLI:\n", "WHITE", '');
-         &ColorMessage("   -h          Displays the program CLI help.", "WHITE", '');
-         &ColorMessage("   -d          Run the program in debug mode.", "WHITE", '');
-         &ColorMessage("   -p          Disable import preset ID checks.", "WHITE", '');
-         &ColorMessage("   -r          Disable import preset data reformat.", "WHITE", '');
-         &ColorMessage("   -f <file>   Use the specified database file.\n", "WHITE", '');
+         &ColorMessage("   -h            Displays the program CLI help.", "WHITE", '');
+         &ColorMessage("   -a            Monochrome output. No ANSI color.", "WHITE", '');
+         &ColorMessage("   -d            Run the program in debug mode.", "WHITE", '');
+         &ColorMessage("   -p            Disable import preset ID checks.", "WHITE", '');
+         &ColorMessage("   -r            Disable import preset data reformat.", "WHITE", '');
+         &ColorMessage("   -f <file>     Use the specified database file.", "WHITE", '');
+         &ColorMessage("   -c '<cmds>'   Process <cmds> non-interactive.\n", "WHITE", '');
          &ColorMessage("The -p option disables preset ID duplication checks during import. Preset data are", "WHITE", ''); 
          &ColorMessage("import with existing ID values. Also during import, the preset data is reformatted", "WHITE", ''); 
          &ColorMessage("for user readability (SHOW pdata). The -r option disables this processing which may", "WHITE", ''); 
