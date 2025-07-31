@@ -550,31 +550,25 @@ sub FormatPreset {
 sub GetTmpDir {
    my($path, $os) = ('','');
 
-   if ($^O =~ m/Win/) {   # Windows environment?
-      $os = 'win';
-      foreach my $env ('TMP','TEMP','TMPDIR','TEMPDIR') {
-         my $result = `set $env 2>&1`;
-         next if ($result =~ m/not defined/i);
-         $path = $result;
+   foreach my $dir ('TMP','TEMP','TMPDIR','TEMPDIR') {
+      if (exists($ENV{$dir})) {
+         $path = $ENV{$dir};
          last;
       }
+   }
+   if ($^O =~ m/Win/) {   # Windows environment?
+      $os = 'win';
       $path = 'c:/windows/temp' if ($path eq '');
    }
    else {
       $os = 'linux';
-      foreach my $env ('TMPDIR','TEMPDIR','TMP','TEMP') {
-         my $result = `env $env 2>&1`;
-         next if ($result =~ m/no such file/i);
-         $path = $result;
-         last;
-      }
       $path = '/tmp' if ($path eq '');
    }
    chomp($path);
    $path =~ s/^\s+|\s+$//g;
    &DisplayDebug("GetTmpDir: os: $os   path: '$path'");
    unless (-d $path) {
-      &ColorMessage("GetTmpDir - Directory not found: $path", "BRIGHT_RED", '');
+      &ColorMessage("   Can't get temp directory: $path", "BRIGHT_RED", '');
       return '';
    }
    return $path;
@@ -2052,7 +2046,7 @@ sub ExportPresets {
          $dirPath = join('/', $dirPath, 'presets.json');
          return 1 if (&WriteFile($dirPath, \@pdata, ''));
          
-         my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
+         my $ip = $1 if ($$Parsed{'wled1'} =~ m/wled:(.+)/);
          my $wledUrl = "http://$ip";
          return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $dirPath));
          &ColorMessage("   $pcntStr to WLED.","YELLOW", '');
