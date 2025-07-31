@@ -5,9 +5,9 @@ the user as needed. For example, 'xmas' might identify the presets used in a hol
 Presets can be selected ad-hoc or by tag/group word for export to a WLED presets file or 
 directly to WLED over WIFI. 
 
-The program is currently beta release code. It was developed and tested in Linux. Some preliminary
-testing complete in the Windows environment (strawberry perl). Launch the program and enter 
-**Help** for operational details. 
+The program is currently beta release code. It was developed and tested in Linux. Preliminary
+testing in the Windows environment (strawberry perl) has also been completed. Launch the 
+program and enter **Help** for operational details. 
 
 Coded in Perl, the librarian utilizes the [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite) 
 module which is a self-contained RDBMS database. Librarian commands provide the database 
