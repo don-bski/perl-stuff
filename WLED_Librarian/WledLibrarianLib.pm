@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           7-30-2025
+# FILE: WledLibrarianLib.pm                                           7-31-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -23,8 +23,6 @@ our @EXPORT = qw(
    ReadFile
    WriteFile
    DateTime
-   DisplayDebug
-   ColorMessage
    ValidateJson
    FormatPreset
    GetTmpDir
@@ -185,87 +183,6 @@ sub DateTime {
    $date = join($DateJoin, $year, $month, $day);
    $time = join($TimeJoin, $hour, $min, $sec); 
    return join($DatetimeJoin, $date, $time);
-}
-
-# =============================================================================
-# FUNCTION:  DisplayDebug
-#
-# DESCRIPTION:
-#    Displays a debug message to the user. The message is colored for easier
-#    identification on the console.
-#
-# CALLING SYNTAX:
-#    $result = &DisplayDebug($Message);
-#
-# ARGUMENTS:
-#    $Message              Message to be output.
-#
-# RETURNED VALUES:
-#    0 = Success,  1 = Error.
-#
-# ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}
-# =============================================================================
-sub DisplayDebug {
-   my($Message) = @_;
-   
-   &ColorMessage($Message, 'BRIGHT_CYAN', '') if (defined( $main::cliOpts{d} ));
-   return 0;
-}
-
-# =============================================================================
-# FUNCTION:  ColorMessage
-#
-# DESCRIPTION:
-#    Displays a message to the user. If specified, an input parameter provides
-#    coloring for the message text. Supported color constants are as follows.
-#
-#    black            red                green            yellow
-#    blue             magenta            cyan             white
-#    bright_black     bright_red         bright_green     bright_yellow
-#    bright_blue      bright_magenta     bright_cyan      bright_white
-#    gray             reset
-#
-#    gray = bright_black. reset return to screen colors.
-#  
-# CALLING SYNTAX:
-#    $result = &ColorMessage($Message, $Color, $Nocr);
-#
-# ARGUMENTS:
-#    $Message         Message to be output.
-#    $Color           Optional color attributes to apply.
-#    $Nocr            Suppress message newline if set. 
-#
-# RETURNED VALUES:
-#    0 = Success,  1 = Error.
-#
-# ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{a}
-# =============================================================================
-sub ColorMessage {
-   my($Message, $Color, $Nocr) = @_;
-   my($cr) = "\n";
-   
-   # The color constants and their associated ANSI terminal sequence.
-   my(%colConst) = (
-      'black' => "\e[30m", 'red' => "\e[31m", 'green' => "\e[32m",
-      'yellow' => "\e[33m", 'blue' => "\e[34m", 'magenta' => "\e[35m",
-      'cyan' => "\e[36m", 'white' => "\e[37m", 'gray' => "\e[90m",
-      'bright_black' => "\e[90m", 'bright_red' => "\e[91m", 
-      'bright_green' => "\e[92m", 'bright_yellow' => "\e[93m",
-      'bright_blue' => "\e[94m", 'bright_magenta' => "\e[95m",
-      'bright_cyan' => "\e[96m", 'bright_white' => "\e[97m", 
-      'reset' => "\e[39;49m");
-   
-   $cr = '' if ($Nocr ne '');
-      
-   if ($Color ne '' and not defined($main::cliOpts{a})) {
-      print STDOUT $colConst{ lc($Color) }, $Message, $colConst{'reset'}, "$cr";
-   }
-   else {
-      print STDOUT $Message, "$cr";
-   }
-   return 0;
 }
 
 # =============================================================================
@@ -1122,6 +1039,7 @@ sub PromptUser {
 #       right arrow      next input character        27 91 67
 #       end                                          27 91 70
 #       home             Show program header         27 91 72
+#       home             Win32::Console              27 91 49 126
 #       page up                                      27 91 53 126
 #       page down                                    27 91 54 126
 #       keypad 5                                     27 91 69
@@ -1132,6 +1050,7 @@ sub PromptUser {
 #       +                                            43
 #       -                                            45
 #       backspace        Delete prev character       127
+#       backspace        Win32::Console              8
 #
 # CALLING SYNTAX:
 #    $result = &ProcessKeypadInput(\%InWork);
@@ -1152,7 +1071,9 @@ sub ProcessKeypadInput {
    # sequences and the subroutine used to perform the actions.
    my(%keySub) = ('279151126' => \&delete, '127' => \&backSpace, '279165' => \&upArrow,
       '279166' => \&downArrow, '279168' => \&leftArrow, '279167' => \&rightArrow,
-      '279172' => \&homeKey, '9' => \&tabKey);
+      '279172' => \&homeKey, '9' => \&tabKey,
+      # These definitions are needed for the windows environment.
+      '8' => \&backSpace, '279149126' => \&homeKey);
                   
    # This hash defines cursor move and edit ANSI sequences. Not all are used
    # For details, see https://en.wikipedia.org/wiki/ANSI_escape_code             
@@ -1225,9 +1146,9 @@ sub ProcessKeypadInput {
       my($InWork, $Cursor) = @_;
       if ($#{ $$InWork{'history'} } >= 0) {  # Ignore key if no history.
          return 0 if ($$InWork{'hptr'} > $#{ $$InWork{'history'} }); # Ignore if > max.
-         if ($$InWork{'hptr'} == $#{ $$InWork{'history'} }) {  # At max
+         if ($$InWork{'hptr'} >= $#{ $$InWork{'history'} }) {  # At max
             $$InWork{'inbuf'} = '';  # clear input.
-            $$InWork{'hptr'}++;      # point one beyond.
+            $$InWork{'hptr'} = $#{ $$InWork{'history'} } +1;  # point one beyond.
          }
          else {
             $$InWork{'inbuf'} = ${ $$InWork{'history'} }[ ++$$InWork{'hptr'} ];
@@ -1235,7 +1156,7 @@ sub ProcessKeypadInput {
          $$InWork{'iptr'} = length($$InWork{'inbuf'});  # iptr to end-of-line
          print $$Cursor{'delLine'};
          &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');         
-         print $line;
+         print $$InWork{'inbuf'};
       }
       return 0;
    }
@@ -1291,6 +1212,7 @@ sub ProcessKeypadInput {
                $$InWork{'inbuf'} =~ s#file:$spec#file:$spec/#;
                $$InWork{'iptr'}++;
                $spec = join('', $spec, '/');
+               print '/';
             }
             @temp = grep {(-f and -T) or -d} glob "${spec}*";  # Get file entries.
             return 0 if ($#temp < 0);             # Nothing to do.
@@ -1351,6 +1273,7 @@ sub ProcessKeypadInput {
       print "\n";
       foreach my $name (@$Fnames) {  # Show file names.
          print '  ' if ($cnt == 0);
+         $name = join('', $name, '/') if (-d $name);
          print substr(join('', $name, $pad), 0, $width);
          $cnt++;
          if ($cnt >= $cols) {
@@ -1427,6 +1350,9 @@ sub ProcessKeypadInput {
 # =============================================================================
 sub GetKeyboardInput {
    my($InWork) = @_;
+   
+   my (%keyMap) = ('back' => 127, 'tab' => 9, 'enter' => 10);
+   %keyMap = ('back' => 8, 'tab' => 9, 'enter' => 13) if ($^O =~ m/Win/);
 
    # Output user prompt if necessary.
    if (exists($$InWork{'prompt'})) {
@@ -1436,8 +1362,9 @@ sub GetKeyboardInput {
          $$InWork{'pflag'} = 1;
       }
    }
+   
    while (defined($char = ReadKey(-1))) {     # Get user input.
-#      &DisplayDebug("ProcessKeyboardInput: char: '" . ord($char) . "'");
+      # &DisplayDebug("ProcessKeyboardInput: char: '" . ord($char) . "'");
       
       if (ord($char) == 27) {                       # Escape sequence.
          $$InWork{'inseq'} = ord($char);
@@ -1450,17 +1377,18 @@ sub GetKeyboardInput {
             last if (ord($char) =~ m/^(65|66|67|68|69|70|72)/);
             last if (ord($char) =~ m/^126/);
          }
+         &DisplayDebug("ProcessKeyboardInput inseq: " . $$InWork{'inseq'});
          &ProcessKeypadInput($InWork);
       }
-      elsif (ord($char) == 127) {                   # Backspace key.
+      elsif (ord($char) == $keyMap{'back'}) {         # Backspace key.
          $$InWork{'inseq'} = ord($char);
          &ProcessKeypadInput($InWork);
       }
-      elsif (ord($char) == 9) {                     # Tab key.
+      elsif (ord($char) == $keyMap{'tab'}) {          # Tab key.
          $$InWork{'inseq'} = ord($char);
          &ProcessKeypadInput($InWork)
       }
-      elsif (ord($char) == 10) {                    # Enter key.
+      elsif (ord($char) == $keyMap{'enter'}) {        # Enter key.
          if ($$InWork{'inbuf'} ne '') {
             # Create history array if not present.
             unless (defined( $$InWork{'history'} )) {

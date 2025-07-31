@@ -1,10 +1,15 @@
 #!/usr/bin/perl
 # ===================================================================================
-# FILE: WledLibrarianDBI.pm                                                7-13-2025
+# FILE: WledLibrarianDBI.pm                                                7-31-2025
 #
 # DESCRIPTION:
 #   This perl module provides SQLite database interfacing functions for the WLED
 #   librarian program.
+#
+#   Subroutines DisplayDebug and ColorMessage are defined here so they are available
+#   to both WledLibrarianDIB and WledLibrarianLib. Organizationally, they belong in
+#   WledLibrarianLib. But a circular reference will result if 'use WledLibrarianLib'
+#   is added to this module.
 #
 # PERL VERSION:  5.28.1
 #
@@ -22,6 +27,8 @@ our @EXPORT = qw(
    SelectDbArray
    DeleteDbData
    UpdateDbData
+   DisplayDebug
+   ColorMessage
 );
    
 # ------------------------------------------------------------------------------
@@ -100,10 +107,10 @@ sub ColorMessage {
       'bright_green' => "\e[92m", 'bright_yellow' => "\e[93m",
       'bright_blue' => "\e[94m", 'bright_magenta' => "\e[95m",
       'bright_cyan' => "\e[96m", 'bright_white' => "\e[97m", 
-      'reset' => "\e[39;49m");
+      'reset' => "\e[0m");
    
    $cr = '' if ($Nocr ne '');
-      
+
    if ($Color ne '' and not defined($main::cliOpts{a})) {
       print STDOUT $colConst{ lc($Color) }, $Message, $colConst{'reset'}, "$cr";
    }

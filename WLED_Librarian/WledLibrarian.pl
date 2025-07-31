@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-librarian.pl                                             7-15-2025
+# FILE: wled-librarian.pl                                             7-31-2025
 #
 # SERVICES: WLED Preset Librarian  
 #
@@ -18,11 +18,11 @@
 # PERL VERSION:  5.28.1
 # ==============================================================================
 use Getopt::Std;
-use WledLibrarianLib;
-use WledLibrarianDBI;
+require Win32::Console::ANSI if ($^O =~ m/Win/);
 use Term::ReadKey;
 use DBI;
 use File::Copy;
+use Time::HiRes qw(sleep);
 use Data::Dumper;
 # use warnings;
 # $Data::Dumper::Sortkeys = 1;
@@ -39,6 +39,10 @@ if (length($ExecutableName) != length($0)) {
    $WorkingDir = substr($0, 0, rindex($0, "/"));
 }
 unshift (@INC, $WorkingDir);
+
+# --- Add the executable included perl modules.
+eval "use WledLibrarianLib";
+eval "use WledLibrarianDBI";
 
 our %cliOpts = ();                           # CLI options working hash
 getopts('hdaprc:', \%cliOpts);               # Load CLI options hash
@@ -176,6 +180,9 @@ if ($cliOpts{c} ne '') {
    exit(0);  
 }
 
+# Unbuffered output needed; mainly Windows environments.
+$| = 1;
+
 # ==========
 # Setup the input working hash. See &GetKeyboardInput description for details.
 my %inWork = ('inbuf' => '', 'iptr' => 0, 'prompt' => 'Enter -> ',
@@ -192,10 +199,12 @@ if ($Dbh) {
       $inWork{'inbuf'} = '';
       $inWork{'iptr'} = 0;
       # Prompt user for input.
+      &DisplayDebug("Call GetKeyboardInput for user command.");
       while (&GetKeyboardInput(\%inWork) == 0) {  # Wait for user input.
          sleep .2;
       }
       chomp($inWork{'inbuf'});
+      &DisplayDebug("Process command: $inWork{'inbuf'}");
       if ($inWork{'inbuf'} =~ m/^q[uit]*$/i) {   # Terminate program if quit.
          &ColorMessage("   Program stop.", "YELLOW", '');
          $runLoop = 0;
