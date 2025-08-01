@@ -19,8 +19,8 @@ tables and their columns are not present.
 The user is prompted to create a new empty database if an existing database file is not found. A 
 database file that includes presets, wled_librarian.dbs.zip, is included in this archive. Unzip it
 in a working directory for use if desired. They may be freely used/distributed. **Note:** The
-presets in the group ***wall*** are mostly configured for a single 711 LED string. But the presets in
-group ***house*** are configured for four LED strings; some with multiple sub-segments. Have a look at 
+presets in the group *wall* are mostly configured for a single 711 LED string. But the presets in
+group *house* are configured for four LED strings; some with multiple sub-segments. Have a look at 
 the Pdata using the librarian SHOW command.
 
 The program reformats the preset JSON during import to improve user readability. This has been tested 
