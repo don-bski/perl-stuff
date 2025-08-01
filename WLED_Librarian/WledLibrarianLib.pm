@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           7-31-2025
+# FILE: WledLibrarianLib.pm                                           8-01-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -550,15 +550,18 @@ sub FormatPreset {
 sub GetTmpDir {
    my($path, $os) = ('','');
 
+   # Check for an environment varible specified tempdir.
    foreach my $dir ('TMP','TEMP','TMPDIR','TEMPDIR') {
       if (exists($ENV{$dir})) {
          $path = $ENV{$dir};
          last;
       }
    }
-   if ($^O =~ m/Win/) {   # Windows environment?
+
+   # Use a default if tempdir not specified.
+   if ($^O =~ m/Win/) {
       $os = 'win';
-      $path = 'c:/windows/temp' if ($path eq '');
+      $path = cwd() if ($path eq '');
    }
    else {
       $os = 'linux';
