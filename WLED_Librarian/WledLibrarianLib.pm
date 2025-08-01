@@ -920,7 +920,7 @@ sub ShowCmdHelp {
          &ColorMessage("SORT lid | pid | date | pname | tag | group:a|d", "BRIGHT_WHITE", '');
          &ColorMessage("Specifies the column and direction to order the SHOW command output. Ascending (low to", "WHITE", ''); 
          &ColorMessage("high), Descending (high to low). The setting remains in effect until changed. Default", "WHITE", ''); 
-         &ColorMessage("column is Pid:a. e.g. ", "WHITE", 'nocr');
+         &ColorMessage("column is Lid:a. e.g. ", "WHITE", 'nocr');
          &ColorMessage("ORDER date:d.", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^q[uit]*/) {

@@ -49,7 +49,7 @@ getopts('hdaprc:', \%cliOpts);               # Load CLI options hash
 our $DbFile = 'wled_librarian.dbs';          # Default database file
 our $Dbh;                                    # Working reference to DB object
 our $WledIp = '4.3.2.1';                     # WLED endpoint IP
-our $Sort = 'Pid ASC';                       # Default output ordering.
+our $Sort = 'Lid ASC';                       # Default output ordering.
 
 our $UsageText = (qq(
 ===== Help for $ExecutableName ================================================
