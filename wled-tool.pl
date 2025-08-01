@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  6-01-2025
+# FILE: wled-tool.pl                                                  8-01-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -308,35 +308,32 @@ sub WriteFile {
 sub GetTmpDir {
    my($path, $os) = ('','');
 
-   if ($^O =~ m/Win/) {   # Windows environment?
-      $os = 'win';
-      foreach my $env ('TMP','TEMP','TMPDIR','TEMPDIR') {
-         my $result = `set $env 2>&1`;
-         next if ($result =~ m/not defined/i);
-         $path = $result;
+   # Check for an environment varible specified tempdir.
+   foreach my $dir ('TMP','TEMP','TMPDIR','TEMPDIR') {
+      if (exists($ENV{$dir})) {
+         $path = $ENV{$dir};
          last;
       }
-      $path = 'c:/windows/temp' if ($path eq '');
+   }
+
+   # Use a default if tempdir not specified.
+   if ($^O =~ m/Win/) {
+      $os = 'win';
+      $path = cwd() if ($path eq '');
    }
    else {
       $os = 'linux';
-      foreach my $env ('TMPDIR','TEMPDIR','TMP','TEMP') {
-         my $result = `env $env 2>&1`;
-         next if ($result =~ m/no such file/i);
-         $path = $result;
-         last;
-      }
       $path = '/tmp' if ($path eq '');
    }
    chomp($path);
    $path =~ s/^\s+|\s+$//g;
-   print "GetTmpDir: os: $os   path: '$path'\n" if (exists( $main::cliOpts{d} ));
+   &DisplayDebug("GetTmpDir: os: $os   path: '$path'");
    unless (-d $path) {
-      &ColorMessage("GetTmpDir - Directory not found: $path", "BRIGHT_RED", '');
+      &ColorMessage("   Can't get temp directory: $path", "BRIGHT_RED", '');
       return '';
    }
    return $path;
-} 
+}
 
 # =============================================================================
 # FUNCTION:  ColorMessage
