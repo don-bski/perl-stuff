@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  8-01-2025
+# FILE: wled-tool.pl                                                  8-02-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -327,7 +327,7 @@ sub GetTmpDir {
    }
    chomp($path);
    $path =~ s/^\s+|\s+$//g;
-   &DisplayDebug("GetTmpDir: os: $os   path: '$path'");
+   print "GetTmpDir: os: $os   path: '$path'\n" if (exists( $main::cliOpts{d} ));
    unless (-d $path) {
       &ColorMessage("   Can't get temp directory: $path", "BRIGHT_RED", '');
       return '';
