@@ -1,5 +1,5 @@
 # perl-stuff
-This repository contains some perl based programs that, at the time, were written to address a general need or function as a learning tool. While not written to the highest of perl coding standards and best practices, they might be useful in one form or another. The larger programs have a fair amount of documentation included in the code. The programs should work with most perl versions. Linux distributions generally include a useable perl version. My Windows environment uses ActiveState perl 5.16 but Strawberry perl will also work.<br/><br/>
+This repository contains some perl based programs that, at the time, were written to address a general need or function as a learning tool. While not written to the highest of perl coding standards and best practices, they might be useful in one form or another. The larger programs have a fair amount of documentation included in the code. The programs should work with most perl versions. Linux distributions generally include a useable perl version.<br/><br/>
 Place the code in a convenient location on your system and use **perl pgm.pl** at the operating system command line to run. Use **cpanm** or **MCPAN** at your OS command line to install any needed perl modules. Use each program's **-h** option to display it's usage text. All programs are provided as-is and function as described. You may need to modify them for the needs of your operating environment.
 
 ### OS: Windows
@@ -17,5 +17,6 @@ Place the code in a convenient location on your system and use **perl pgm.pl** a
 **wled-tool.pl** - This program is used to send and receive data with WLED using its json api interface. Available functions include backup and restore of WLED user settings (configuration, presets, custom palettes), an interactive preset audition function, and a preset data reformatter. The reformat function rearranges and selectively indents the preset data to simplify text editing of a preset backup file. The desired function is specified using one of the program's CLI options. This tool is useful in cases where the WLED GUI is not available.<br/>
 **wled-tool-v1.zip** - wled-tool standalone Windows executable, built with perl PAR::Packer. `md5:ad07437f2880481e0bff7f81e8a807ee`<br/><br/>
 <img src="wled-screencap.png" alt="screenshot" width="500"/><br/>
+
 
 
