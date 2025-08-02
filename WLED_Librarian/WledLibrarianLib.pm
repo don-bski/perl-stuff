@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           8-01-2025
+# FILE: WledLibrarianLib.pm                                           8-02-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -26,6 +26,7 @@ our @EXPORT = qw(
    ValidateJson
    FormatPreset
    GetTmpDir
+   PostJson
    PostUrl
    GetUrl
    WledReset
@@ -578,6 +579,69 @@ sub GetTmpDir {
 } 
 
 # =============================================================================
+# FUNCTION:  PostJson
+#
+# DESCRIPTION:
+#    This routine is used to POST the JSON formatted data specified by $Json
+#    to the specified URL; typically http://<wled-ip>/json/state. 
+#
+#    my($agent) defines the POST user agent string. decode_json is used to 
+#    validate the json payload. The POST is retried up to 3 times before 
+#    returning error.
+#
+# CALLING SYNTAX:
+#    $result = &PostJson($Url, $Json);
+#
+# ARGUMENTS:
+#    $Url            Endpoint URL.
+#    $Json           Json formatted data to POST
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub PostJson {
+   my($Url, $Json) = @_;
+   my($response, @data);
+   my($agent) = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, " .
+                "like Gecko) Chrome/89.0.4389.114 Safari/537.36";
+   my($retry) = 3;
+   &DisplayDebug("PostJson: $Url   Json: '$Json'");
+
+   my $userAgent = LWP::UserAgent->new(
+      timeout => 5, agent => $agent, protocols_allowed => ['http',]);
+   if ($Json ne '') {
+      while ($retry > 0) {
+         $response = $userAgent->post($Url,
+            Content_Type => 'application/json',
+            Content => "$Json"
+         );
+         last if ($response->is_success);
+         $retry--;
+         if ($retry == 0) {
+            &ColorMessage("HTTP POST $Url", "BRIGHT_RED", '');
+            &ColorMessage("HTTP POST error: " . $response->code, "BRIGHT_RED", '');
+            &ColorMessage("HTTP POST error: " . $response->message .
+                          "\n","BRIGHT_RED", '');
+            return 1;
+         }
+         else {
+            &ColorMessage("PostJson - POST retry ...", "CYAN", '');
+            sleep 1;       # Wait a bit for network stabilization.
+         }
+      }
+   }
+   else {
+      &ColorMessage("PostJson - No JSON data specified.", "BRIGHT_RED", '');
+      return 1;
+   }
+   undef($userAgent);
+   return 0;
+}
+
+# =============================================================================
 # FUNCTION:  PostUrl
 #
 # DESCRIPTION:
@@ -889,7 +953,7 @@ sub ShowCmdHelp {
          &ColorMessage("be disabled by adding the -p option to the program start CLI.", "WHITE", '');
       }
       elsif ($cmd =~ m/^sh[ow]*/) {
-         &ColorMessage("SHOW tag:<w> group:<w> pid:<i> date:<d> lid:<i> pname:<w> type:<w> pdata src", "BRIGHT_WHITE", '');
+         &ColorMessage("SHOW tag:<w> group:<w> pid:<i> date:<d> lid:<i> pname:<w> type:<w> pdata src wled", "BRIGHT_WHITE", '');
          &ColorMessage("Used to display database records matching the specified criteria. For multiple", "WHITE", '');
          &ColorMessage("options, they are logically joined by AND in the database query. e.g. tag:new", "WHITE", '');
          &ColorMessage("(and) date:2025-06-13. For options that support multiple value input, the items", "WHITE", '');
@@ -897,7 +961,12 @@ sub ShowCmdHelp {
          &ColorMessage("Text based option input <w> is used in a 'contains' manner. e.g. pname:blu shows", "WHITE", '');
          &ColorMessage("all presets with 'blu' in the preset name. Numeric option input <i> is matched", "WHITE", '');
          &ColorMessage("exactly. The type option selects presets or playlists. e.g. type:pl. pdata shows", "WHITE", '');
-         &ColorMessage("the preset's JSON in the output. src shows the preset's input source.  e.g. ", "WHITE", 'nocr'); 
+         &ColorMessage("the preset's JSON in the output. src shows the preset's input source.\n", "WHITE", '');
+         &ColorMessage("Option wled[:<ip>] will send the preset data to the specified WIFI connected WLED", "WHITE", '');
+         &ColorMessage("instance; first displayed record only. Unlike export, this action does not affect", "WHITE", '');
+         &ColorMessage("any existing WLED stored presets. Custom palettes and/or LED mappings used by the", "WHITE", '');
+         &ColorMessage("preset must be present on the WLED instance. If a playlist is sent, the presets", "WHITE", '');
+         &ColorMessage("it uses must also be present.  e.g. ", "WHITE", 'nocr'); 
          &ColorMessage("SHOW lid:2,4,7 pdata", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^ex[port]*/) {
@@ -970,7 +1039,7 @@ sub DisplayHeadline {
    &ColorMessage("support multiple comma separated values. e.g. tag:<w>,<w>. Home key shows this header.", "WHITE", '');
    &ColorMessage("\nCommands:", "WHITE", ''); 
    &ColorMessage("   show [tag:<w>] [group:<w>] [pid:<i>] [date:<d>] [lid:<i>] [pname:<n>] [qll:<w>]", "WHITE", '');
-   &ColorMessage("          [type:<w>] [pdata] [src]", "WHITE", '');
+   &ColorMessage("          [type:<w>] [pdata] [src] [wled[:<ip>]]", "WHITE", '');
    &ColorMessage("      + [add [tag:<w>] [group:<w>]]", "WHITE", '');
    &ColorMessage("      + [remove [tag:<w>] [group:<w>]]", "WHITE", '');
    &ColorMessage("      + [export [file:<file>] [wled[:<ip>]]]", "WHITE", '');
@@ -1475,7 +1544,7 @@ sub ParseInput {
    # These hashes define the supported commands and the options that may be used.
    # First command position and second.
    my(%validCmd1) = ('import' => 'file,wled,tag,group', 'help' => '', 'quit' => '',
-      'show' => 'tag,group,date,pid,pname,type,lid,pdata,qll,src', 
+      'show' => 'tag,group,date,pid,pname,type,lid,pdata,qll,src,wled', 
       'delete' => 'lid,pid,tag,group', 'dupl' => 'lid,pid,pname,qll,tag,group',
       'edit' => 'lid,pid,pname,qll,src', 'sort' => 'tag,group,date,pid,pname,lid');
    my(%validCmd2) = ('add' => 'tag,group', 'remove' => 'tag,group', 
@@ -2007,7 +2076,7 @@ sub ImportPresets {
 sub ExportPresets {
    my($Dbh, $Parsed, $LidList) = @_;
    my(@pdata, $pcntStr);
-   my($wledDefIp) = '4.3.2.1';
+
    &DisplayDebug("ExportPresets ...  LidList: $LidList");
    &DisplayDebug("'$$Parsed{'file1'}'  '$$Parsed{'wled1'}'");
 
@@ -2313,6 +2382,59 @@ sub DisplayPresets {
 }
 
 # =============================================================================
+# FUNCTION:  ShowOnWled
+#
+# DESCRIPTION:
+#    This routine is called to send the specified preset data to a WIFI 
+#    connected WLED instance.
+#
+# CALLING SYNTAX:
+#    $result = &ShowOnWled($Dbh, $Parsed, \@Pdata);
+#
+# ARGUMENTS:
+#    $Dbh          Database object reference.
+#    $Parsed       Pointer to parsed data hash.
+#    $Pdata        Pointer to preset data array.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub ShowOnWled {
+   my($Dbh, $Parsed, $Pdata) = @_;
+   my(@data);
+   
+   # rec order: Type,Pid,Pname,Qll,Date,Lid,Tag,Group
+   my @rec = split('\|', $$Pdata[0]);  # Future process all records.
+   my $query = "SELECT Pdata FROM Presets WHERE Lid = $rec[5];";
+   unless (&SelectDbArray($Dbh, $query, \@data)) {
+      &DisplayDebug("ShowOnWled: '@data'");
+      my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
+      my $wledUrl = "http://$ip";
+      my $json = $data[0];
+      if ($json =~ m/"playlist":/) {
+         $json = substr($json, index($json, '"playlist"'));
+         &PostJson(join("/", $wledUrl, "json/state"), '{"on":true}');
+      }
+      elsif ($json =~ m/"seg":/) {      
+         $json = substr($json, index($json, '"seg"'));
+         &PostJson(join("/", $wledUrl, "json/state"), '{"on":true}');
+      }
+      else {
+         $json =~ s/^"\d+":\{//;
+         $json =~ s/\}$//;
+      }
+      &PostJson(join("/", $wledUrl, "json/state"), "{$json}");
+   }
+   else {
+      &ColorMessage("   No data to process.","YELLOW", '');
+   }
+   return 0;
+}
+
+# =============================================================================
 # FUNCTION:  ShowPresets
 #
 # DESCRIPTION:
@@ -2417,6 +2539,11 @@ sub ShowPresets {
    # Display results.
    print "\n" unless (exists($$Parsed{'cmd1'}));
    return 1 if (&DisplayPresets($Dbh, $Parsed, \@array));
+   
+   # Send send preset data to WLED if specified.
+   if (exists($$Parsed{'wled0'})) {
+      return 1 if (&ShowOnWled($Dbh, $Parsed, \@array));
+   }
    return 0;
 }
 
