@@ -19,8 +19,8 @@ tables and their columns are not present.
 The user is prompted to create a new empty database if an existing database file is not found. A 
 sample database file *wled_librarian.dbs.zip* is included in this archive. Unzip it in a working 
 directory for use if desired. The presets in the group *wall* are mostly configured for a single 
-711 LED string. But the presets in group *house* are configured for four LED strings; some with 
-multiple sub-segments. Have a look at the preset Pdata using the librarian SHOW command.
+711 LED string. But the presets in group *house* are configured for four LED channels (Dig-Quad); 
+some with multiple sub-segments. Have a look at the preset Pdata using the librarian SHOW command.
 
 The program reformats the preset JSON during import to improve user readability. This has been tested 
 with a number of LED strip types, primarily WS2815, and ESP32. Other hardware combinations may reveal 
