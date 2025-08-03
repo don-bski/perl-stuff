@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           8-02-2025
+# FILE: WledLibrarianLib.pm                                           8-03-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -560,7 +560,7 @@ sub GetTmpDir {
    }
 
    # Use a default if tempdir not specified.
-   if ($^O =~ m/Win/) {
+   if ($^O =~ m/Win/i) {
       $os = 'win';
       $path = cwd() if ($path eq '');
    }
@@ -963,10 +963,10 @@ sub ShowCmdHelp {
          &ColorMessage("exactly. The type option selects presets or playlists. e.g. type:pl. pdata shows", "WHITE", '');
          &ColorMessage("the preset's JSON in the output. src shows the preset's input source.\n", "WHITE", '');
          &ColorMessage("Option wled[:<ip>] will send the preset data to the specified WIFI connected WLED", "WHITE", '');
-         &ColorMessage("instance; first displayed record only. Unlike export, this action does not affect", "WHITE", '');
-         &ColorMessage("any existing WLED stored presets. Custom palettes and/or LED mappings used by the", "WHITE", '');
-         &ColorMessage("preset must be present on the WLED instance. If a playlist is sent, the presets", "WHITE", '');
-         &ColorMessage("it uses must also be present.  e.g. ", "WHITE", 'nocr'); 
+         &ColorMessage("instance. Unlike export, this action does not affect existing presets stored on the", "WHITE", '');
+         &ColorMessage("WLED instance. If a playlist is sent, the presets it uses need to be present. For", "WHITE", '');
+         &ColorMessage("multiple records in linux, presets are cycled on a 5 second interval until another", "WHITE", '');
+         &ColorMessage("commmand is entered. In windows only the first record is displayed.  e.g.", "WHITE", '');
          &ColorMessage("SHOW lid:2,4,7 pdata", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^ex[port]*/) {
@@ -1418,7 +1418,7 @@ sub GetKeyboardInput {
    my($InWork) = @_;
    
    my (%keyMap) = ('back' => 127, 'tab' => 9, 'enter' => 10);
-   %keyMap = ('back' => 8, 'tab' => 9, 'enter' => 13) if ($^O =~ m/Win/);
+   %keyMap = ('back' => 8, 'tab' => 9, 'enter' => 13) if ($^O =~ m/Win/i);
 
    # Output user prompt if necessary.
    if (exists($$InWork{'prompt'})) {
@@ -2400,37 +2400,70 @@ sub DisplayPresets {
 #    0 = Success,  1 = Error.
 #
 # ACCESSED GLOBAL VARIABLES:
-#    None
+#    $main::ChildPid
 # =============================================================================
 sub ShowOnWled {
    my($Dbh, $Parsed, $Pdata) = @_;
    my(@data);
    
-   # rec order: Type,Pid,Pname,Qll,Date,Lid,Tag,Group
-   my @rec = split('\|', $$Pdata[0]);  # Future process all records.
-   my $query = "SELECT Pdata FROM Presets WHERE Lid = $rec[5];";
-   unless (&SelectDbArray($Dbh, $query, \@data)) {
-      &DisplayDebug("ShowOnWled: '@data'");
-      my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
-      my $wledUrl = "http://$ip";
+   return 1 if ($#$Pdata < 0);  # Nothing to do.
+   my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
+   my $url = "http://$ip/json/state";
+   if ($#$Pdata == 0 or $^O =~ m/Win/i) {  # Can't reliably fork in Windows.
+      return &PostIt($$Pdata[0], $url);
+   }
+   # More than 1 preset to display. We fork and cycle the presets until another
+   # librarian command is entered. The command parser will kill the child pid.
+   if ($main::ChildPid != 0) {   # Previous fork still running?
+      kill 'TERM', $main::ChildPid;
+      $main::ChildPid = 0;
+      sleep .25;
+   }
+   my $pid = fork();
+   if ( $pid == 0 ) {
+      # Child process.
+      while (1) {
+         foreach my $record (@$Pdata) {
+            exit(0) if (&PostIt($record, $url));
+            sleep 5;
+         }
+      }
+      exit(0);
+   } 
+   elsif ( $pid > 0) {
+      # Master has a new child.
+      $main::ChildPid = $pid;
+   }
+   else {
+      &ColorMessage("   Could not fork: $!","BRIGHT_RED", '');
+      return 1;
+   }   
+      
+   # ----------
+   # Post preset string to WLED.
+   sub PostIt {
+      my($Record, $Url) = @_;
+
+      my @temp = split('\|', $Record);     # 5th is Lid
+      my $query = "SELECT Pdata FROM Presets WHERE Lid = $temp[5];";
+      return 1 if (&SelectDbArray($Dbh, $query, \@data));
       my $json = $data[0];
       if ($json =~ m/"playlist":/) {
          $json = substr($json, index($json, '"playlist"'));
-         &PostJson(join("/", $wledUrl, "json/state"), '{"on":true}');
+         return 1 if(&PostJson($Url, '{"on":true}'));
       }
       elsif ($json =~ m/"seg":/) {      
          $json = substr($json, index($json, '"seg"'));
-         &PostJson(join("/", $wledUrl, "json/state"), '{"on":true}');
+         return 1 if(&PostJson($Url, '{"on":true}'));
       }
       else {
          $json =~ s/^"\d+":\{//;
          $json =~ s/\}$//;
       }
-      &PostJson(join("/", $wledUrl, "json/state"), "{$json}");
+      return 1 if(&PostJson($Url, "{$json}"));
+      return 0;
    }
-   else {
-      &ColorMessage("   No data to process.","YELLOW", '');
-   }
+   
    return 0;
 }
 

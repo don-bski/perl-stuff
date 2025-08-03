@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-librarian.pl                                             7-31-2025
+# FILE: wled-librarian.pl                                             8-03-2025
 #
 # SERVICES: WLED Preset Librarian  
 #
@@ -18,7 +18,7 @@
 # PERL VERSION:  5.28.1
 # ==============================================================================
 use Getopt::Std;
-require Win32::Console::ANSI if ($^O =~ m/Win/);
+require Win32::Console::ANSI if ($^O =~ m/Win/i);
 use Term::ReadKey;
 use DBI;
 use File::Copy;
@@ -40,14 +40,17 @@ if (length($ExecutableName) != length($0)) {
 }
 unshift (@INC, $WorkingDir);
 
-# --- Add the executable included perl modules.
+# --- Add the executable included perl modules. Eval method for windows.
 eval "use WledLibrarianLib";
 eval "use WledLibrarianDBI";
+# use WledLibrarianLib;
+# use WledLibrarianDBI;
 
 our %cliOpts = ();                           # CLI options working hash
 getopts('hdaprc:', \%cliOpts);               # Load CLI options hash
 our $DbFile = 'wled_librarian.dbs';          # Default database file
 our $Dbh;                                    # Working reference to DB object
+our $ChildPid = 0;                           # Pid of forked child. ShowOnWled
 our $WledIp = '4.3.2.1';                     # WLED endpoint IP
 our $Sort = 'Lid ASC';                       # Default output ordering.
 
@@ -135,6 +138,9 @@ sub Ctrl_C {
    sleep .1;
    exit(0);
 }
+sub SigTerm {
+   exit(0);
+}
 
 # =============================================================================
 # MAIN PROGRAM
@@ -150,10 +156,13 @@ if (exists( $cliOpts{h} )) {
 
 # ==========
 # Setup for processing termination signals. Provides for properly closing the
-# database by the Ctrl_C subroutine.                              
-foreach my $sig ('INT','QUIT','TERM','ABRT','STOP','KILL','HUP') {
+# database by the Ctrl_C subroutine. Signal TERM calls a seperate subroutine.
+# Used to simply exit a child process.                          
+foreach my $sig ('INT','QUIT','ABRT','STOP','KILL','HUP') {
    $SIG{$sig} = \&Ctrl_C;
 }
+$SIG{TERM} = \&SigTerm;
+$SIG{CHLD} = 'IGNORE';
 
 # ==========
 # Open database connection. Create a new database if user confirmed.
@@ -213,6 +222,13 @@ if ($Dbh) {
       
       # Parse and process the user input.
       %cmdHash = ('sort' => $Sort);   # Clear command and parsing hash. Set sort.
+      # Kill &ShowOnWled started child process if running. Forked code used to
+      # cycle preset on WIFI connected WLED.
+      if ($ChildPid != 0) { 
+         kill 'TERM', $ChildPid;
+         $ChildPid = 0;
+         sleep .1;
+      }
       &ParseInput($Dbh, $inWork{'inbuf'}, \%cmdHash);
       if ($cmdHash{'cmd0'} eq 'quit') {
          $runLoop = 0;
