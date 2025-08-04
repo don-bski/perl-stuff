@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  8-02-2025
+# FILE: wled-tool.pl                                                  8-04-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -38,7 +38,7 @@
 # ==============================================================================
 use Getopt::Std;
 use Term::ANSIColor;
-require Win32::Console::ANSI if ($^O =~ m/Win/);
+require Win32::Console::ANSI if ($^O =~ m/Win/i);
 use LWP::UserAgent;
 use JSON;
 use Data::Dumper;
@@ -317,7 +317,7 @@ sub GetTmpDir {
    }
 
    # Use a default if tempdir not specified.
-   if ($^O =~ m/Win/) {
+   if ($^O =~ m/Win/i) {
       $os = 'win';
       $path = cwd() if ($path eq '');
    }
@@ -381,7 +381,7 @@ sub ColorMessage {
    
    $cr = '' if ($Nocr ne '');
    if ($Color ne '') {
-      if ($^O =~ m/Win/) {            # Windows environment?
+      if ($^O =~ m/Win/i) {            # Windows environment?
          print STDOUT color("$Color"), $Message, color("reset"), "$cr";
       }
       else {
@@ -1131,7 +1131,7 @@ if (exists( $cliOpts{e} )) {
 
 # ==========
 # Verify endpoint is accessible.
-if ($^O =~ m/Win/) {                            # Windows environment?
+if ($^O =~ m/Win/i) {                            # Windows environment?
    my $resp = `ping -w 1000 -n 1 -l 64 $WledIp 2>&1`;   # Windows ping
    unless ($resp =~ m/Reply from $WledIp/m) {
       &ColorMessage("No ping response from IP: $WledIp", "BRIGHT_RED", '');
@@ -1171,7 +1171,7 @@ if (exists( $cliOpts{P} )) {
    if (-e $cliOpts{P}) {
       my $file = $cliOpts{P};
       exit(1) if (&ReadFile($file, \@data, 'trim'));
-      unless (grep /\{"0":\{\},/, @data) {         # Check for preset 0 entry.
+      unless (grep /"0":\{\},/, @data) {         # Check for preset 0 entry.
          &ColorMessage("File content doesn't look like WLED preset data. " .
                        "Continue? [y/N] -> ", "BRIGHT_YELLOW", 'nocr');
          my $resp = <STDIN>;
