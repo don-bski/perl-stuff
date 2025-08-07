@@ -24,6 +24,8 @@ presets use multiple segments. Have a look at the preset Pdata using the librari
 
 The program reformats the preset JSON during import to improve user readability. This has been tested 
 with a number of LED strip types, primarily WS2815, and ESP32. Other hardware combinations may reveal 
-errors due to untested WLED json keys. A CLI option is available to disable this processing.
-<br/><br/>
+errors due to untested WLED json keys. A CLI option is available to disable this processing.<br/>
+
+**WledLibrarian-v0.1.zip** - WledLibrarian standalone Windows executable, built with perl PAR::Packer.<br/>
+WledLibrarian.exe `md5: 97a7a4cf14726a10c00697fe479dffaa`<br/><br/>
 <img src="librarian.png" alt="screenshot" width="600"/>
