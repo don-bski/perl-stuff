@@ -4,6 +4,6 @@ standalone palette file import/export.<br/>
 
 Palette data is stored in a new Palettes database table. The v0.2 database is not compatible with 
 the v0.3 librarian code. If using the v0.2 version, recreate the database or use the v0.3 sample 
-database. <br/><br/>
+database.<br/><br/>
 
 **8-03-2025** - Initial WledLibrarian v0.2 release.
