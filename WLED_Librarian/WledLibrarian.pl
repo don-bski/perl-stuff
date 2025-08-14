@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-librarian.pl                                             8-03-2025
+# FILE: wled-librarian.pl                                             8-14-2025
 #
 # SERVICES: WLED Preset Librarian  
 #
@@ -40,7 +40,10 @@ if (length($ExecutableName) != length($0)) {
 }
 unshift (@INC, $WorkingDir);
 
-# --- Add the executable included perl modules. Eval method for windows.
+# --- Add the executable included perl modules. Eval method is needed for
+#     windows environment. However, this may interfere with code syntax 
+#     error reporting in linux. Use 'use' during linux code development.
+
 eval "use WledLibrarianLib";
 eval "use WledLibrarianDBI";
 # use WledLibrarianLib;

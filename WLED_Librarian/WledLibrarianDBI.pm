@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ===================================================================================
-# FILE: WledLibrarianDBI.pm                                                7-31-2025
+# FILE: WledLibrarianDBI.pm                                                8-13-2025
 #
 # DESCRIPTION:
 #   This perl module provides SQLite database interfacing functions for the WLED
@@ -130,7 +130,7 @@ sub ColorMessage {
 #    specifies the database file name. The following tables are created/verified. 
 #
 #    Table: Presets  - Holds the JSON imported from WLED presets.json files.
-#       Lid    - Database record id used for SQL table joins.
+#       Lid    - Unique record id used for SQL table joins.
 #       Pid    - Isolated preset id from Pdata.
 #       Pname  - Isolated preset name from Pdata.
 #       Qll    - Isolated preset quick load label from Pdata.
@@ -144,11 +144,11 @@ sub ColorMessage {
 #       Tag    - List of user provided tag words.  e.g. new, test
 #       Group  - List of user provided grouping words.  e.g. xmas, xmas2025
 #
-#    Table: Segments - Holds the segment porion of the imported preset.
-#       Sid    - Id used for SQL table joins. Same as associated Lid.
-#       Seg    - Segment id value from preset.
-#       Sdata  - JSON data for this segment.
-#       Scolr  - 1st, 2nd, and 3rd colors used by this segment.
+#    Table: Palettes - Holds the custom palettes used by the presets.
+#       Palid  - Unique palette Id. Multiple palettes for preset possible. 
+#       Plid   - Lid of preset using this palette.
+#       Plnum  - Palette number; 0 through -9 (256-247).
+#       Pldata - JSON data for this custom palette.
 #
 #    The following initialization logic is used by this routine.
 #
@@ -207,7 +207,8 @@ sub InitDB {
          return -1;
       }
 
-      $sql = qq(CREATE TABLE Keywords (Kid INTEGER, Tag VARCHAR(2000), [Group] VARCHAR(2000)););
+      $sql = qq(CREATE TABLE Keywords (Kid INTEGER, Tag VARCHAR(2000), 
+             [Group] VARCHAR(2000)););
       $rv = $dbh->do($sql);
       if ($rv) {
          &DisplayDebug("InitDB: Keywords table created.");
@@ -216,8 +217,17 @@ sub InitDB {
          &ColorMessage("InitDB: table create failed. $DBI::errstr", "BRIGHT_RED", '');
          return -1;
       }
-      
-      # Eventually add segments table.
+
+      $sql = qq(CREATE TABLE Palettes (Palid INTEGER PRIMARY KEY, Plid INTEGER, 
+             Plnum INTEGER, Pldata VARCHAR(100)););
+      $rv = $dbh->do($sql);
+      if ($rv) {
+         &DisplayDebug("InitDB: Palettes table created.");
+      }
+      else {
+         &ColorMessage("InitDB: table create failed. $DBI::errstr", "BRIGHT_RED", '');
+         return -1;
+      }
    }
    else {         # Connect and check existing database.
       $dbh = DBI->connect("dbi:SQLite:dbname=$DbFile","","");
@@ -225,7 +235,8 @@ sub InitDB {
       
       # Expected table columns.
       my %check = ('Presets' => 'Lid,Pid,Pname,Qll,Pdata,Type,Src,Date',
-                   'Keywords' => 'Kid,Tag,Group');
+                   'Keywords' => 'Kid,Tag,Group', 
+                   'Palettes' => 'Palid,Plid,Plnum,Pldata');
       
       # Check each database table.
       foreach $key (keys(%check)) {
@@ -255,6 +266,7 @@ sub InitDB {
          }
       }
    }
+   
    return $dbh;
 }
 
@@ -466,6 +478,9 @@ sub DeleteDbData {
    }
    elsif ($Table eq 'Keywords') {
       $query = "DELETE FROM $Table WHERE $Table.Kid = $Id;";
+   }
+   elsif ($Table eq 'Palettes') {
+      $query = "DELETE FROM $Table WHERE $Table.Plid = $Id;";
    }
    
    $sth = $Dbh->prepare($query);
