@@ -27,5 +27,5 @@ with a number of LED strip types, primarily WS2815, and ESP32. Other hardware co
 errors due to untested WLED json keys. A CLI option is available to disable this processing.<br/>
 
 **WledLibrarian-v0.3.zip** - WledLibrarian standalone Windows executable, built with perl PAR::Packer.<br/>
-WledLibrarian.exe `md5: 53f7792fdb7133290825dded515383ed`<br/><br/>
+WledLibrarian.exe `md5: 75a99c67cddb7004027e7576fc387c4c`<br/><br/>
 <img src="librarian.png" alt="screenshot" width="600"/>
