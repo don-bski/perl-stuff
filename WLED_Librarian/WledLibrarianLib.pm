@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           8-14-2025
+# FILE: WledLibrarianLib.pm                                           8-15-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -2223,10 +2223,9 @@ sub ExportPresets {
    foreach my $rec (@pldata) {
       my @data = split('\|', $rec);
       my $name = join('', 'palette', abs($data[0] - 256), '.json');
-      $palHash{$name} = @data[1];
+      $palHash{$name} = $data[1];
    }
    print "\n";
-   
    # Export to file.
    if (exists($$Parsed{'file1'})) {
       &DisplayDebug("ExportPresets file: $$Parsed{'file1'}");
@@ -2246,6 +2245,7 @@ sub ExportPresets {
       }
       foreach my $file (sort keys(%palHash)) {
          my @array = ("$palHash{$file}");
+         return 1 if (&ValidateJson(\@array, '', '', '')); # Validate the JSON.
          $file = join('/', $srcPath, $file) if ($srcPath ne '');
          return 1 if (&WriteFile($file, \@array, ''));
          &ColorMessage("   Palette file created: $file","YELLOW", '');
@@ -2265,7 +2265,8 @@ sub ExportPresets {
       unlink $file;
       foreach my $name (sort keys(%palHash)) {
          my $file = join('/', $dirPath, $name);
-         my @array = ("$palHash{$file}");
+         my @array = ("$palHash{$name}");
+         return 1 if (&ValidateJson(\@array, '', '', '')); # Validate the JSON.
          return 1 if (&WriteFile($file, \@array, ''));
          return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file));
          &ColorMessage("   Sent palette to WLED: $name","YELLOW", '');
