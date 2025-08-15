@@ -15,8 +15,9 @@ Place the code in a convenient location on your system and use **perl pgm.pl** a
 **env.pl** - Displays the %ENV hash environment variables/values that were inherited from the operating system as part of perl program start.<br/>
 **bin2hex.pl** - Dumps the specified file contents to the console. Hex and its ASCII equivalent characters are displayed.<br/><br/>
 **wled-tool.pl** - This program is used to send and receive data with WLED using its json api interface. Available functions include backup and restore of WLED user settings (configuration, presets, custom palettes), an interactive preset audition function, and a preset data reformatter. The reformat function rearranges and selectively indents the preset data to simplify text editing of a preset backup file. The desired function is specified using one of the program's CLI options. This tool is useful in cases where the WLED GUI is not available.<br/><br/>
-**wled-tool-v1.01.zip** - wled-tool standalone Windows executable, built with perl PAR::Packer.<br/>wled-tool.exe md5: `7f4544ee9ad87482c581d346f86192cb`<br/><br/>
+**wled-tool-v1.1.zip** - wled-tool standalone Windows executable, built with perl PAR::Packer.<br/>wled-tool.exe md5: `7e01e7efb7e89bf78baab176dc9cf0f0`<br/><br/>
 <img src="wled-screencap.png" alt="screenshot" width="500"/><br/>
+
 
 
 
