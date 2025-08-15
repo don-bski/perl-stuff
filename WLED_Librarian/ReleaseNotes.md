@@ -1,4 +1,4 @@
-**8-14-2025** - WledLibrarian v0.3 is updated to process custom palettes that are associated with a 
+**8-15-2025** - WledLibrarian v0.3 is updated to process custom palettes that are associated with a 
 preset. The palette data is handled as part of import/export. Future librarian features may include 
 standalone palette file import/export.<br/>
 
