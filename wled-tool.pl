@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  8-04-2025
+# FILE: wled-tool.pl                                                  8-15-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -57,7 +57,7 @@ if (length($ExecutableName) != length($0)) {
 unshift (@INC, $WorkingDir);
 
 our %cliOpts = ();           # CLI options working hash
-getopts('hdilre:f:v:w:x:a:A:c:C:g:G:p:P:', \%cliOpts);  # Load CLI options hash
+getopts('hdilre:f:v:w:x:a:A:c:C:g:G:p:P:m:M:', \%cliOpts);  # Load CLI options hash
 
 our $WledIp = '4.3.2.1';     # WLED endpoint IP
 our %Sections = ('configuration' => 'cfg.json', 'presets' => 'presets.json');
@@ -86,8 +86,8 @@ GENERAL DESCRIPTION
    The options -c -C and -p -P accept the single character - for <file>. This
    results in the default file name 'cfg.json' and 'presets.json' respectively. 
    
-   Caution: When using a backup option (-a, -c, -p, -g), if the specified file
-   exists, it will be overwritten without warning.
+   Caution: When using a backup option (-a, -c, -p, -g, -m), if the specified 
+   file exists, it will be overwritten without warning.
       
    To backup working data prior to a WLED software upgrade, use the -a option.
    After upgrade, connect to WLED using a browser. Use the GUI 'WIFI SETTINGS'
@@ -124,7 +124,8 @@ GENERAL DESCRIPTION
 USAGE:
    $ExecutableName  [-h] [-d] [-i] [-l] [-r] [-e <url>] [-a <file>] [-A <file>]
       [-c <file>] [-C <file>] [-g <dir>] [-G <file>[,<file>,...]] [-p <file]
-      [-P <file>] [-f <file>] [-v <file>] [-w <file>] [-x <file>]
+      [-P <file>] [-f <file>] [-v <file>] [-w <file>] [-x <file>] [-m <dir>]
+      [-M <file>[,<file>,...]]
 
    -h           Displays program usage text.
    -d           Run in debug mode.
@@ -139,7 +140,8 @@ USAGE:
    -a <file>    Backup WLED cfg, presets, and palettes to a single file.
    -c <file>    Backup WLED cfg data to file. - for <file> = cfg.json
    -p <file>    Backup WLED preset data to file. - for <file> = presets.json
-   -g <dir>     Backup custom palettes to specified directory.
+   -g <dir>     Backup custom palettes to the specified directory.
+   -m <dir>     Backup custom ledmaps to the specified directory.
 
    -A <file>    Restore WLED cfg, presets, and palettes from a file previously
                 created by the -a option.
@@ -147,6 +149,7 @@ USAGE:
    -P <file>    Restore WLED preset data from file. Use -r option to activate
                 the restored presets.
    -G <file>    Restore specified custom palette file(s) content to WLED. 
+   -M <file>    Restore specified custom ledmap file(s) content to WLED. 
                   
    -f <file>    Format the specified preset file for text editor.
    -v <file>    Validate json formatted content of <file>.
@@ -778,10 +781,12 @@ sub GetUrl {
          }
       }
       else {
-         # Request for a palette.json beyond the last available will return 404 
-         # status. In this case, suppress error report and return 2.
+         # Request for a palette.json or ledmap.json beyond the last 
+         # available will return 404 status. In this case, suppress 
+         # error report and return 2.
          my $code = $response->code; 
-         if ($Url =~ m/palette\d\.json$/ and $code == 404) {
+         if (($Url =~ m/palette\d\.json$/ or $Url =~ m/ledmap\d\.json$/) 
+             and $code == 404) {
             $exitCode = 2;
             last;
          }
@@ -1241,17 +1246,18 @@ if (exists( $cliOpts{C} )) {
 }
 
 # ==========
-# Backup WLED configuration, presets, and palettes to specified file. Have to 
-# brute force get of the palette data. Currently no way to know which palettes
-# are defined ahead of time.
+# Backup WLED configuration, presets, palettes, and ledmaps to the specified 
+# file. Have to brute force get of the palette and ledmap data. Currently no 
+# way to know which palettes or ledmaps are defined ahead of time.
 if (exists( $cliOpts{a} )) {
-   my @resp = ();   my @data = ();
-   foreach my $section ("configuration","presets","palettes") {
-      if ($section eq 'palettes') {
+   my @resp = ();   my @data = ();   my $pStr;
+   foreach my $section ("configuration","presets","palettes","ledmaps") {
+      if ($section eq 'palettes' or $section eq 'ledmaps') {
          push (@data, "== $section ==");
          &ColorMessage("$section", "WHITE", '');
          for (my $x = 0; $x < 10; $x++) {
-            my $pStr = join('', 'palette', $x, '.json');
+            $pStr = join('', 'palette', $x, '.json') if ($section eq 'palettes');
+            $pStr = join('', 'ledmap', $x, '.json') if ($section eq 'ledmaps');
             my $url = join("/", $WledUrl, $pStr);
             my $code = &GetUrl($url, \@resp);
             if ($code == 0) {
@@ -1259,6 +1265,7 @@ if (exists( $cliOpts{a} )) {
                &ColorMessage("   $pStr", "WHITE", '');
             }
          }
+         push (@data, '');
       }
       else {
          push (@data, "== $section ==");
@@ -1267,21 +1274,21 @@ if (exists( $cliOpts{a} )) {
          push (@data, @resp, '');
       }
    }
-   push (@data, '', '== eof ==');
+   push (@data, '== eof ==');
    exit(1) if (&WriteFile($cliOpts{a}, \@data, 'trim'));
    &ColorMessage("Backup $cliOpts{a} successfully created.", "WHITE", '');
    exit(0);
 }
 
 # ==========
-# Restore WLED configuration, presets, and palettes from specified file. File must
-# have the section breaks that were created by the -a backup code. We send the
-# configuration data last due to WLED auto-reboot following configuration load.
+# Restore WLED configuration, presets, palettes and ledmaps from specified file.
+# File must have the section breaks that were created by the -a backup code. We 
+# send the configuration data last due to WLED auto-reboot following load.
 if (exists( $cliOpts{A} )) {
    my @data = ();
    exit(1) if (&ReadFile($cliOpts{A}, \@data, 'trim'));
    if (grep /== eof ==/, @data) {
-      foreach my $section ("presets","palettes","configuration") {
+      foreach my $section ("presets","palettes","ledmaps","configuration") {
          # Extract data records for section.
          my @secData = ();  my $beg = -1;
          for (my $x = 0; $x <= $#data; $x++) {
@@ -1313,6 +1320,18 @@ if (exists( $cliOpts{A} )) {
                }
             }
          }
+         elsif ($section eq 'ledmaps') {
+            for (my $x = 0; $x <= $#secData; $x++) {
+               if ($secData[$x] =~ m/^ledmap\d\.json$/) {
+                  my $name = join('/', &GetTmpDir(), $secData[$x]);
+                  my @array = ("$secData[$x +1]");
+                  exit(1) if (&WriteFile($name, \@array, 'trim'));
+                  exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $name));
+                  &ColorMessage("$secData[$x] data successfully sent.", "WHITE", '');
+                  unlink $name;
+               }
+            }
+         }
       }
    }
    else {
@@ -1320,6 +1339,55 @@ if (exists( $cliOpts{A} )) {
       exit(1);
    }
    &ColorMessage("WLED auto-reset. Wait ~15 sec for network reconnect.", "WHITE", '');
+   exit(0);
+}
+
+# ==========
+# Backup any user custom ledmaps to individual files. 
+if (exists( $cliOpts{m} )) {
+   if (-d $cliOpts{m}) {
+      $cliOpts{m} =~ s#[/|\\]$##;      # Remove trailing / or \ if present.
+      my @resp = ();
+      for (my $x = 0; $x < 10; $x++) {
+         my $pStr = join('', 'ledmap', $x, '.json');
+         my $url = join("/", $WledUrl, $pStr);
+         my $code = &GetUrl($url, \@resp);
+         if ($code == 0) {
+            my $pathFile = join('/', $cliOpts{m}, $pStr);
+            exit(1) if (&WriteFile($pathFile, \@resp, 'trim'));
+            &ColorMessage("Palette backup: $pathFile", "WHITE", '');
+         }
+      }
+   }
+   else {
+      &ColorMessage("Directory not found: $cliOpts{m}", "BRIGHT_RED", '');
+   }
+   exit(0);
+}
+
+# ==========
+# Send user specified JSON ledmap file(s) data to WLED.
+if (exists( $cliOpts{M} )) {
+   my @files = ();
+   if ($cliOpts{M} =~ m/,/) {                # Multiple files specified?
+      @files = split(',', $cliOpts{M});
+   }
+   elsif ($cliOpts{M} =~ m/\*|\?/) {         # Wildcard character specified?
+      @files = grep {-f} glob $cliOpts{M};   # Get matching file entries.
+   }
+   else {
+      push (@files, $cliOpts{M});
+   }
+   foreach my $file (@files) {
+      $file =~ s/^\s+|\s+$//g;
+      if (-e $file) {
+         exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $file));
+         &ColorMessage("$file data successfully sent.", "WHITE", '');
+      }
+      else {
+         &ColorMessage("File not found: $file", "BRIGHT_RED", '');
+      }
+   }
    exit(0);
 }
 
