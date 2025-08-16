@@ -114,8 +114,26 @@ add this command to the end.<br/>
 Example: `SHOW tag:new ADD tag:xmas,4th`
 
 #### REMOVE command
+`REMOVE tag:<w> group:<w>`<br/>
+Used to remove tag and/or group word(s) from the selected presets. Use the SHOW
+command to filter for the desired preset(s). Then, recall the SHOW command and add
+this command to the end.<br/>
+Example: `SHOW group:test REMOVE group:test,xmas`
 
 #### EXPORT command
+`EXPORT file:<file> or wled[:<ip>]`<br/>
+Used to send the SHOW selected preset data to a file or a WLED instance. The file
+is WLED compatible for subsequent upload into WLED using its Config->**Restore presets**
+function. Custom palette files, e.g. palette0.json, are also created if needed by one
+or more of the presets.<br/>
+Example: `SHOW group:4th EXPORT file:/home/pi/wled/4th-presets.json`
+
+When `wled` is specified, the preset data is sent to an active WLED over its WIFI
+connection and replaces the current presets data. Preset used custom palettes are
+also sent. The default WLED WIFI address is 4.3.2.1 if not specified.<br/>
+Example: `SHOW tag:xmas EXPORT wled:192.168.1.20`
+
+Following WIFI transfer, the active WLED is reset to activate the presets.
 
 #### DELETE command
 `DELETE [lid:<i>] [pid:<i>] [tag:<w>] [group:<w>] [pal:<i>]`<br/>
