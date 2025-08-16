@@ -28,7 +28,7 @@ Commands:
 =====================================================================================
 Enter ->
 ```
-### Librarian Help Text
+### Librarian Help
 
 #### General
 Wled librarian is a simple tool that is used for the storage of WLED presets as
@@ -193,7 +193,7 @@ column is `Lid:a`.<br/>
 Example: `SORT date:d`
 
 #### HELP command
-`HELP [add | change | delete | edit | export | general | import | quit | remove | show]'<br/>
+`HELP [add | change | delete | edit | export | general | import | quit | remove | show]`<br/>
 Displays the full help text on the console. To limit the ouput to a specific area, add 
 one or two characters of the desired area.<br/>
 Example: `help ex`
