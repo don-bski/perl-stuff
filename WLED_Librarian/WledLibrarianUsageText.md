@@ -29,8 +29,7 @@ Commands:
 Enter ->
 ```
 ### Librarian Help Text
-The `Help` command will display the full help text on the console. To limit the ouput
-to a specific area, add one or two characters of the desired area. e.g. `help ex`.
+
 #### General
 Wled librarian is a simple tool that is used for the storage of WLED presets as
 individual entities in a database. These preset data are tagged and grouped by the
@@ -143,8 +142,19 @@ is no un-delete function.<br/>
 Example: `DELETE lid:10,13`
 
 #### DUPL command
+`DUPL lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [tag:<w>] [group:<w>]`<br/>
+Used to duplicate a preset data record. The `lid` specified source record is replicated
+to the next available lid. Tag/group words associated with the source record are not
+replicated. Optional parameters, if specified, are applied to the new preset record.<br/>
+Example: `DUPL lid:17 pid:67 pname:TwinkleRedGrn tag:xmas`
 
 #### EDIT command
+`EDIT lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [src:<w>]`<br/>
+Used to change the preset ID `Pid`, preset name `Pname`, quick load label `Qll`, or
+import source `src` value. `Lid:` specifies the database record to change. `Pid:, pname:
+qll: and src:` specify the replacement values. If the new preset name includes a space,
+enclose the new value in single quotes.<br/>
+Example: `EDIT lid:2 pid:42 pname:'The Answer'`
 
 #### IMPORT command
 `IMPORT file:<file> wled[:<ip>] tag:<w>[,<w>] group:<w>[,<w>]`<br/>
@@ -183,4 +193,12 @@ column is `Lid:a`.<br/>
 Example: `SORT date:d`
 
 #### HELP command
+`HELP [add | change | delete | edit | export | general | import | quit | remove | show]'<br/>
+Displays the full help text on the console. To limit the ouput to a specific area, add 
+one or two characters of the desired area.<br/>
+Example: `help ex`
 
+#### QUIT command
+`QUIT`<br/>
+Closes the database and terminates the librarian program.<br/>
+Example: `QUIT`
