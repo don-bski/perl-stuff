@@ -200,5 +200,6 @@ Example: `help ex`
 
 #### QUIT command
 `QUIT`<br/>
-Closes the database and terminates the librarian program.<br/>
+The quit command terminates the WLED ligrarian program. The current state of the database 
+is preserved.<br/>
 Example: `QUIT`
