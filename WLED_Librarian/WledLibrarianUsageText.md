@@ -74,4 +74,95 @@ The `-c` option performs the specified command(s) directly. Results are sent to
 STDOUT and errors to STDERR. Used to integrate with a script or other external
 program. `"<cmds>"` must comform to the interactive usage rules.
 
-more
+#### Interactive Keys
+```
+   UpArrow  DnArrow       Recall previously used command.
+   LftArrow  RgtArrow     Move curcor position in current CLI.
+   Del  Backspace         Remove character in current CLI.
+   Tab                    file: name search/entry, similar to OS. No ~ support.
+   Home                   Display program headline command summary.
+```
+All librarian commands and options are case insensitive. Options and their value(s)
+must be colon `:` joined. Commands are capitalized in this help text for clairity.
+
+#### SHOW command
+`SHOW tag:<w> group:<w> pid:<i> date:<d> lid:<i> pname:<w> type:<w> pdata pal src wled`<br/>
+Used to display database records matching the specified criteria. For multiple
+options, they are logically joined by AND in the database query.`tag:new
+(and) date:2025-06-13`. For options that support multiple value input, the items
+are logically OR-ed. `pid:5,9`, 5 or 9 or both.
+
+Text based option input `<w>` is used in a 'contains' manner. `pname:blu` shows
+all presets with the letters 'blu' in the preset name. Numeric option input `<i>`
+is matched exactly. The type option selects presets or playlists. `type:pl`. Preset 
+data `pdata`, custom palette `pal`, and source `src` options display the specified 
+data for each record output.
+
+Option `wled[:<ip>]` will send the preset data to the specified WIFI connected WLED
+instance. Unlike export, this action does not affect existing presets stored on the
+WLED instance. If a playlist is sent, the presets it uses need to be present on the
+WLED instance. Multiple SHOW selected presets are cycled on a 5 second interval in
+linux environments until another commmand is entered. In windows, only the first 
+record is displayed.<br/>
+Example: `SHOW lid:2,4,7 pdata`  or  `SHOW lid:3,9 wled`
+
+#### ADD command
+`ADD tag:<w>[:<w>] group:<w>[:<w>]`<br/>
+Used to add one or more tag and/or group words to the selected presets. Use the
+SHOW command to filter for the desired preset(s). Then, recall the SHOW command and
+add this command to the end.<br/>
+Example: `SHOW tag:new ADD tag:xmas,4th`
+
+#### REMOVE command
+
+#### EXPORT command
+
+#### DELETE command
+`DELETE [lid:<i>] [pid:<i>] [tag:<w>] [group:<w>] [pal:<i>]`<br/>
+Used to delete preset data record(s). Specify one or more record selection filters.
+Respond to the confirmation prompt to proceed with the operation. Use caution. There
+is no un-delete function.<br/>
+Example: `DELETE lid:10,13`
+
+#### DUPL command
+
+#### EDIT command
+
+#### IMPORT command
+`IMPORT file:<file> wled[:<ip>] tag:<w>[,<w>] group:<w>[,<w>]`<br/>
+Used to load JSON formatted WLED preset data into the database. The WLED presets
+backup function in the WLED configuration menu can be used to create a file. Tag
+and/or group words can be applied to all presets during import. `tag:new` is
+applied if neither is specified.<br>
+Example: `IMPORT file:presets.json group:xmas`
+
+The presets on an active WLED instance can be directly imported over WIFI. The
+above tag/group word rules apply. Specify the IP address if WLED is not using
+the 4.3.2.1 default.<br/>
+Example: `IMPORT wled:192.168.1.12 tag:test,xmas`
+
+Checks are performed on each incoming preset to help mitigate duplications. If the
+preset is already in the database, the user is prompted for an action; **S**kip, 
+**R**eplace, **N**ew, **K**eep, or **#**. # is a numeric value in the range 0-250.
+The importing preset ID is changed to the entered value. Enter **0** to abort the 
+import. For choice `New`, the importing preset ID is changed to the lowest unused 
+ID value. Choice `Keep` imports the preset with its existing pid.
+
+Additional processing occurs for choice New or a user entered ID value. During
+the import operation, any importing playlists that use the old ID value will be
+changed to use the new ID value.
+
+Duplicate preset ID's or preset data will not affect the librarian database. All
+presets are assigned a unique library ID `lid`. The preset ID `pid`, like tag or
+group, is mainly used for SHOW command selection purposes. Import pid checks can
+be disabled by adding the `-p` option to the program start CLI.
+
+#### SORT command
+`SORT lid | pid | date | pname | tag | group:a|d`<br/>
+Specifies the column and direction to order the SHOW command output. **a**scending, low to
+hig), **d**escending, high to low. The setting remains in effect until changed. Default
+column is `Lid:a`.<br/>
+Example: `SORT date:d`
+
+#### HELP command
+
