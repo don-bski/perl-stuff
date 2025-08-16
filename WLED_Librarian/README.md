@@ -7,7 +7,7 @@ directly to WLED over WIFI.
 
 The program is currently beta release code. It was developed and tested in Linux. Preliminary
 testing in the Windows environment (strawberry perl) has also been completed. Launch the 
-program and enter **Help** for operational details. 
+program and enter **Help** for operational details. [WledLibrarian usage text](WledLibrarianUsageText.md).
 
 Coded in Perl, the librarian utilizes the [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite) 
 module which is a self-contained RDBMS database. Librarian commands provide the database 
