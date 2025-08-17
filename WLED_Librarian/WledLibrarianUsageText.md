@@ -169,6 +169,21 @@ above tag/group word rules apply. Specify the IP address if WLED is not using
 the 4.3.2.1 default.<br/>
 Example: `IMPORT wled:192.168.1.12 tag:test,xmas`
 
+Presets, palettes, and ledmaps are user created in the WLED UI. Each consists of JSON formatted
+field:value pairs. The palette and ledmap entities are associated with a preset and saved in the 
+WLED UI by the user. Field:value pairs within the preset JSON link the palette and ledmap. This 
+association is used to store the preset, palette, and ledmap JSON data in the WledLibrarian's 
+database.
+
+During import, the preset JSON is checked for a custom palette linkage; `pal:256` through `pal:247` which 
+corresponds to `palette0.json` through `palette9.json` files. These files must be present along with the
+preset.json when an `IMPORT file:` is performed. `IMPORT wled:` will automatically transfer the 
+associated palette data from the WLED instance.
+
+Import of ledmap data functions in a similar manner. The importing preset is checked for `ledmap:0`
+through `ledmap:9` which corresponds to `ledmap0.json` through `ledmap9.json`. During subsequent preset 
+EXPORT, the palette and ledmap JSON entities are recreated; files or direct-to-WLED data transfers.
+
 Checks are performed on each incoming preset to help mitigate duplications. If the
 preset is already in the database, the user is prompted for an action; **S**kip, 
 **R**eplace, **N**ew, **K**eep, or **#**. # is a numeric value in the range 0-250.
