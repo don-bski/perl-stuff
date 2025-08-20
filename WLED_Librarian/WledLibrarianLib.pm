@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           8-15-2025
+# FILE: WledLibrarianLib.pm                                           8-19-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -36,6 +36,7 @@ our @EXPORT = qw(
    GetKeyboardInput
    ParseInput
    LoadPalettes
+   LoadLedmaps
    ImportPresets
    ExportPresets
    AddTagGroup
@@ -52,7 +53,7 @@ use LWP::UserAgent;
 use Term::ReadKey;
 use DBI  qw(:utils);
 use JSON;
-use Data::Dumper;
+# use Data::Dumper;
 # use warnings;
 
 # =============================================================================
@@ -374,7 +375,7 @@ sub FormatPreset {
       # to indicate we've processed the key:value pair; set to 'done'. 
       my(%done1) = ();
       $done1{$_} = '' foreach (keys( %{$JsonRef} ));  # Initialize working hash.
-      @order = ('on','n','ql','bri','transition','mainseg','seg');   
+      @order = ('on','n','ql','bri','transition','mainseg','ledmap','seg');   
       
       # Process preset data level 1. Last key checked must be 'seg'. Then add
       # any unknown keys at this level.
@@ -514,7 +515,7 @@ sub FormatPreset {
          'o1'=>1,'o2'=>1,'o3'=>1,'si'=>1,'m12'=>1,'cct'=>1,'transition'=>1,'tt'=>1,
          'tb'=>1,'ps'=>1,'psave'=>1,'pl'=>1,'pdel'=>1,'nl.dur'=>1,'nl.mode'=>1,
          'nl.tbri'=>1,'lor'=>1,'rnd'=>1,'rpt'=>1,'mainseg'=>1,'startY'=>1,'stopY'=>1,
-         'rem'=>1,'recv'=>1,'w'=>1,'h'=>1,'lc'=>1,'rgbw'=>1,'wv'=>1);
+         'rem'=>1,'recv'=>1,'w'=>1,'h'=>1,'lc'=>1,'rgbw'=>1,'wv'=>1, 'ledmap'=>1);
       my(%str) = ('n'=>1,'ql'=>1,'ver'=>1,'vid'=>1,'cn'=>1,'release'=>1);
       if (exists($bool{$Key})) {
          return 'true' if ($Value > 0);
@@ -915,7 +916,7 @@ sub ShowCmdHelp {
          &ColorMessage("add this command to the end. e.g. ", "WHITE", 'nocr');
          &ColorMessage("SHOW tag:new ADD tag:xmas,4th", "BRIGHT_WHITE", '');
       }
-      elsif ($cmd =~ m/^r[emove]*/) {
+      elsif ($cmd =~ m/^rem[ove]*/) {
          &ColorMessage("REMOVE tag:<w> group:<w>", "BRIGHT_WHITE", '');
          &ColorMessage("Used to remove tag and/or group word(s) <w> from the selected presets. Use the SHOW", "WHITE", '');
          &ColorMessage("command to filter for the desired preset(s). Then, recall the SHOW command and add", "WHITE", '');
@@ -948,6 +949,20 @@ sub ShowCmdHelp {
          &ColorMessage("above tag/group word rules apply. Specify the IP address if WLED is not using", "WHITE", '');
          &ColorMessage("the 4.3.2.1 default. e.g. ", "WHITE", 'nocr');
          &ColorMessage("IMPORT wled:192.168.1.12 tag:test,xmas\n", "BRIGHT_WHITE", '');
+         &ColorMessage("Presets, palettes, and ledmaps are user created in the WLED UI. Each consists of", "WHITE", '');
+         &ColorMessage("JSON formatted field:value pairs. The palette and ledmap entities are associated", "WHITE", '');
+         &ColorMessage("with a preset and saved in the WLED UI by the user. Field:value pairs within the", "WHITE", '');
+         &ColorMessage("preset JSON link the palette and ledmap. This association is used to store the", "WHITE", '');
+         &ColorMessage("preset, palette, and ledmap JSON data in the WledLibrarian's database.\n", "WHITE", '');
+         &ColorMessage("During import, the preset JSON is checked for a custom palette linkage; pal:256", "WHITE", '');
+         &ColorMessage("through pal:247 which corresponds to palette0.json through palette9.json files.", "WHITE", '');
+         &ColorMessage("These files must be present along with the preset.json when an IMPORT file: is ", "WHITE", '');
+         &ColorMessage("performed. IMPORT wled: will automatically transfer the associated palette data", "WHITE", '');
+         &ColorMessage("from the WLED instance.\n", "WHITE", '');
+         &ColorMessage("Import of ledmap data functions in a similar manner. The importing preset is", "WHITE", '');
+         &ColorMessage("checked for ledmap:0 through ledmap:9 which corresponds to ledmap0.json through", "WHITE", '');
+         &ColorMessage("ledmap9.json files. During subsequent preset EXPORT, the palette and ledmap JSON", "WHITE", '');
+         &ColorMessage("entities are recreated; files or direct-to-WLED data transfers.\n", "WHITE", '');
          &ColorMessage("Checks are performed on each incoming preset to help mitigate duplications. If the", "WHITE", '');
          &ColorMessage("preset is already in the database, the user is prompted for an action; Skip, Replace", "WHITE", '');
          &ColorMessage("New, Keep, or #. # is a numeric value in the range 0-250. The importing preset ID is", "WHITE", ''); 
@@ -964,7 +979,7 @@ sub ShowCmdHelp {
       }
       elsif ($cmd =~ m/^sh[ow]*/) {
          &ColorMessage("SHOW tag:<w> group:<w> pid:<i> date:<d> lid:<i> pname:<w> type:<w> pdata pal", "BRIGHT_WHITE", '');
-         &ColorMessage("     src wled", "BRIGHT_WHITE", '');
+         &ColorMessage("     map src wled", "BRIGHT_WHITE", '');
          &ColorMessage("Used to display database records matching the specified criteria. For multiple", "WHITE", '');
          &ColorMessage("options, they are logically joined by AND in the database query. e.g. tag:new", "WHITE", '');
          &ColorMessage("(and) date:2025-06-13. For options that support multiple value input, the items", "WHITE", '');
@@ -973,23 +988,23 @@ sub ShowCmdHelp {
          &ColorMessage("all presets with 'blu' in the preset name. Numeric option input <i> is matched", "WHITE", '');
          &ColorMessage("exactly. The type option selects presets or playlists. e.g. type:pl. pdata shows", "WHITE", '');
          &ColorMessage("the preset's JSON in the output. src shows the preset's input source.\n", "WHITE", '');
-         &ColorMessage("The pdata (preset data), pal (custom palette), and src (source) options display", "WHITE", '');
-         &ColorMessage("the specified data for each record output.\n", "WHITE", '');
+         &ColorMessage("The pdata (preset data), pal (custom palette), map (ledmap), and src (source)", "WHITE", '');
+         &ColorMessage("options display the specified data for each record output.\n", "WHITE", '');
          &ColorMessage("Option wled[:<ip>] will send the preset data to the specified WIFI connected WLED", "WHITE", '');
          &ColorMessage("instance. Unlike export, this action does not affect existing presets stored on the", "WHITE", '');
-         &ColorMessage("WLED instance. If a playlist is sent, the presets it uses need to be present. For", "WHITE", '');
-         &ColorMessage("multiple records in linux, presets are cycled on a 5 second interval until another", "WHITE", '');
-         &ColorMessage("commmand is entered. In windows, only the first record is displayed.  e.g.", "WHITE", '');
+         &ColorMessage("WLED instance. If a playlist is sent, the presets it uses need to be present. If", "WHITE", '');
+         &ColorMessage("multiple records are selected, only the first record is displayed.  e.g.", "WHITE", '');
          &ColorMessage("SHOW lid:2,4,7 pdata  ", "BRIGHT_WHITE", 'nocr');
          &ColorMessage("or  ", "WHITE", 'nocr');
-         &ColorMessage("SHOW lid:3,9 wled ", "BRIGHT_WHITE", '');
+         &ColorMessage("SHOW lid:3 wled ", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^ex[port]*/) {
          &ColorMessage("EXPORT file:<file> or wled[:<ip>]", "BRIGHT_WHITE", '');
          &ColorMessage("Used to send the SHOW selected preset pdata to a file or a WLED instance. The file", "WHITE", '');
          &ColorMessage("is WLED compatible for subsequent upload into WLED using its Config 'Restore presets'", "WHITE", '');
          &ColorMessage("function. Custom palette files, e.g. palette0.json, are also created if needed by one", "WHITE", '');
-         &ColorMessage("or more of the presets.\n", "WHITE", '');
+         &ColorMessage("or more of the presets.  ", "WHITE", 'nocr');
+         &ColorMessage("SHOW group:4th EXPORT file:presets.json\n", "BRIGHT_WHITE", '');
          &ColorMessage("When 'wled' is specified, the preset data is sent to an active WLED over its WIFI", "WHITE", '');
          &ColorMessage("connection and replaces the current presets data. Preset used custom palettes are", "WHITE", '');
          &ColorMessage("also sent. The default WLED WIFI address is 4.3.2.1 if not specified. \ne.g. ", "WHITE", 'nocr');
@@ -1009,18 +1024,18 @@ sub ShowCmdHelp {
          &ColorMessage("Specifies the column and direction to order the SHOW command output. Ascending (low to", "WHITE", ''); 
          &ColorMessage("high), Descending (high to low). The setting remains in effect until changed. Default", "WHITE", ''); 
          &ColorMessage("column is Lid:a. e.g. ", "WHITE", 'nocr');
-         &ColorMessage("ORDER date:d.", "BRIGHT_WHITE", '');
+         &ColorMessage("SORT date:d.", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^q[uit]*/) {
          &ColorMessage("QUIT", "BRIGHT_WHITE", '');
          &ColorMessage("The quit command terminates the WLED ligrarian program. The current state of the", "WHITE", '');
-         &ColorMessage("database is preserved.", "WHITE", 'nocr'); 
+         &ColorMessage("database is preserved.", "WHITE", ''); 
       }
       else {
          &ColorMessage("Help: Unknown command '$cmd'.", "WHITE", '');
       }
    }
-   &ColorMessage("\n", "WHITE", '');
+   &ColorMessage('', "WHITE", '');
    return 0;
 }
 
@@ -1055,7 +1070,7 @@ sub DisplayHeadline {
    &ColorMessage("support multiple comma separated values. e.g. tag:<w>,<w>. Home key shows this header.", "WHITE", '');
    &ColorMessage("\nCommands:", "WHITE", ''); 
    &ColorMessage("   show [tag:<w>] [group:<w>] [pid:<i>] [date:<d>] [lid:<i>] [pname:<n>] [qll:<w>]", "WHITE", '');
-   &ColorMessage("          [type:<w>] [pdata] [src] [pal] [wled[:<ip>]]", "WHITE", '');
+   &ColorMessage("          [type:<w>] [pdata] [src] [pal] [map] [wled[:<ip>]]", "WHITE", '');
    &ColorMessage("      + [add [tag:<w>] [group:<w>]]", "WHITE", '');
    &ColorMessage("      + [remove [tag:<w>] [group:<w>]]", "WHITE", '');
    &ColorMessage("      + [export [file:<file>] [wled[:<ip>]]]", "WHITE", '');
@@ -1352,18 +1367,18 @@ sub ProcessKeypadInput {
       my $width = int(72/$cols);
       my $pad = ' ' x $width;
       my $cnt = 0;
-      print "\n";
+      &ColorMessage('', "WHITE", '');
       foreach my $name (@$Fnames) {  # Show file names.
-         print '  ' if ($cnt == 0);
+         &ColorMessage('  ', "WHITE", '') if ($cnt == 0);
          $name = join('', $name, '/') if (-d $name);
          print substr(join('', $name, $pad), 0, $width);
          $cnt++;
          if ($cnt >= $cols) {
-            print "\n";
+            &ColorMessage('', "WHITE", '');
             $cnt = 0;
          }
       }
-      print "\n" if ($cnt > 0);
+      &ColorMessage('', "WHITE", '') if ($cnt > 0);
       &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');
       print $$InWork{'inbuf'};
       $$InWork{'iptr'} = length($$InWork{'inbuf'});
@@ -1560,9 +1575,10 @@ sub ParseInput {
    # These hashes define the supported commands and the options that may be used.
    # First command position and second.
    my(%validCmd1) = ('import' => 'file,wled,tag,group', 'help' => '', 'quit' => '',
-      'show' => 'tag,group,date,pid,pname,type,lid,pdata,qll,src,pal,wled', 
+      'show' => 'tag,group,date,pid,pname,type,lid,pdata,qll,src,pal,map,,wled', 
       'delete' => 'lid,pid,tag,group', 'dupl' => 'lid,pid,pname,qll,tag,group',
-      'edit' => 'lid,pid,pname,qll,src', 'sort' => 'tag,group,date,pid,pname,lid');
+      'edit' => 'lid,pid,pname,qll,src', 'sort' => 'tag,group,date,pid,pname,lid',
+      'dump' => 'tbl');
    my(%validCmd2) = ('add' => 'tag,group', 'remove' => 'tag,group', 
                      'export' => 'file,wled');
    
@@ -1675,6 +1691,10 @@ sub ParseInput {
                # pal is a flag. No associated value.
                $$Parsed{"${opt}${x}"} = 1 if ($$Parsed{"args${x}"} =~ m/pal/i);
             }
+            elsif ($opt eq 'map') {
+               # map is a flag. No associated value.
+               $$Parsed{"${opt}${x}"} = 1 if ($$Parsed{"args${x}"} =~ m/map/i);
+            }
             elsif ($opt eq 'src') {
                if ($$Parsed{"args${x}"}  =~ m/$opt:([a-zA-Z0-9_,\-]+)/i) {
                   $$Parsed{"${opt}${x}"} = $1;
@@ -1715,7 +1735,7 @@ sub ParseInput {
       return &EditPresets($Dbh, $Parsed);
    } 
    elsif ($$Parsed{'cmd0'} eq 'sort') {
-      if (exists($$Parsed{'sortmp'})){
+      if (exists($$Parsed{'sortmp'})) {
          $$Parsed{'sortmp'} .= ':a' unless ($$Parsed{'sortmp'} =~ m/:/);  
          my ($col,$dir) = split(':', $$Parsed{'sortmp'});
          $col = ucfirst($col);
@@ -1734,7 +1754,18 @@ sub ParseInput {
          &ColorMessage("   Sorting on column $$Parsed{'sort'}" , 'YELLOW', '');
       }
       return 0;
-    } 
+   }
+   elsif ($$Parsed{'cmd0'} eq 'dump') {
+      my (@tables) = ('Presets','Keywords','Palettes','Ledmaps');
+      if (exists($$Parsed{'tbl0'})) {
+         foreach my $table (@tables) {
+            if ($table =~ m/^$$Parsed{'tbl0'}/i) {
+               return 1 if (&DumpDbTable($Dbh, $table));
+            }
+         }
+      }
+      return 0;
+   } 
    elsif ($$Parsed{'cmd0'} eq 'quit') {
       return 0;
    } 
@@ -1747,9 +1778,9 @@ sub ParseInput {
 #
 # DESCRIPTION:
 #    This routine loads custom palette data. WLED custom palettes are specified 
-#    as pal:xxx in the preset json. Custom palettes are in the range 247-256.
-#    This cooresponds to palette0-palette9. The palette data is stored in the
-#    specified hash; key 247-256, value json text data.
+#    as pal:xxx in the preset JSON. Custom palettes are in the range 247-256.
+#    This cooresponds to files palette0.json through palette9. The palette data
+#    is stored in the specified hash; key 247-256, value JSON text data.
 #
 # CALLING SYNTAX:
 #    $result = &LoadPalettes($Parsed, \%PalData);
@@ -1780,6 +1811,8 @@ sub LoadPalettes {
          &DisplayDebug("LoadPalettes pal: $pal - file: $file");
          if (-e $file) {
             return 1 if (&ReadFile($file, \@data, 'trim'));
+            $data[0] =~ s/[\r\n]+//g;
+            $data[0] =~ s/\s{2,}/ /g;
             $$PalData{$pal} = $data[0];
             &DisplayDebug("LoadPalettes PalData: '$$PalData{$pal}'");
          }
@@ -1789,8 +1822,71 @@ sub LoadPalettes {
          my $url = join("/", 'http:/', $ip, $file);
          my $result = &GetUrl($url, \@data);
          if ($result == 0) {
+            $data[0] =~ s/[\r\n]+//g;
+            $data[0] =~ s/\s{2,}/ /g;
             $$PalData{$pal} = $data[0];
             &DisplayDebug("LoadPalettes pal: $pal - file: $file");
+         }
+      }
+   }   
+   return 0;
+}
+
+# =============================================================================
+# FUNCTION:  LoadLedmaps
+#
+# DESCRIPTION:
+#    This routine loads ledmap data. WLED ledmaps are specified as ledmap:x 
+#    in the preset JSON. Ledmaps are in the range 0-9 and coorespond to 
+#    files ledmap0.json through ledmap9.json. The ledmap data is stored in
+#    the specified hash; key 0-9, value JSON text data.
+#
+# CALLING SYNTAX:
+#    $result = &LoadLedmaps($Parsed, \%MapData);
+#
+# ARGUMENTS:
+#    $Parsed       Pointer to parsed data hash.
+#    $MapData      Pointer to hash.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub LoadLedmaps {
+   my($Parsed, $MapData) = @_;
+   my(@data) = ();
+   
+   &DisplayDebug("LoadLedmaps ...");
+   foreach my $map (0..9) {
+      my $file = join('', 'ledmap', $map, '.json');
+      if (exists($$Parsed{'file0'})) { 
+         my $srcPath = '';
+         if ($$Parsed{'file0'} =~ m#/#) {
+            $srcPath = substr($$Parsed{'file0'}, 0, rindex($$Parsed{'file0'}, '/'));
+         }
+         $file = join('/', $srcPath, $file) if ($srcPath ne '');
+         &DisplayDebug("LoadLedmaps map: $map - file: $file");
+         if (-e $file) {
+            return 1 if (&ReadFile($file, \@data, 'trim'));
+            my $ledmap = join('', @data);
+            $ledmap =~ s/[\r\n]+//g;
+            $ledmap =~ s/\s{2,}/ /g;
+            $$MapData{$map} = $ledmap;
+            &DisplayDebug("LoadLedmaps MapData: '$$MapData{$map}'");
+         }
+      }
+      elsif (exists($$Parsed{'wled0'})) {
+         my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
+         my $url = join("/", 'http:/', $ip, $file);
+         my $result = &GetUrl($url, \@data);
+         if ($result == 0) {
+            my $ledmap = join('', @data);
+            $ledmap =~ s/[\r\n]+//g;
+            $ledmap =~ s/\s{2,}/ /g;
+            $$MapData{$map} = $ledmap;
+            &DisplayDebug("LoadLedmaps map: $map - file: $file");
          }
       }
    }   
@@ -1887,8 +1983,8 @@ sub ImportDuplicate {
       elsif ($resp =~ m/^(\d+)$/) {
          $pidVal = $1;
          if ($pidVal == 0) {  # User entered 0 to abort.
-           print "\n";
-           return 1 
+            &ColorMessage('', "WHITE", '');
+            return 1 
         }
         if ($pidVal < 1 or $pidVal > $pidLimit) {
            &ColorMessage("   Invalid pid value. Range 1-$pidLimit.", 
@@ -1951,6 +2047,12 @@ sub ImportDuplicate {
 #       Plnum  - Palette number; 0 through -9 (256-247).
 #       Pldata - JSON data for this custom palette.
 #
+#    Table: Ledmaps - Holds the custom ledmaps used by the presets.
+#       Mapid  - Unique ledmap Id. One ledmap per preset. 
+#       Mlid   - Lid of preset using this ledmap.
+#       Mnum  -  Ledmap number; 0 through 9 (ledmap0.json - ledmap9.json).
+#       Mdata -  JSON data for this ledmap.
+#
 # CALLING SYNTAX:
 #    $result = &ImportPresets($Dbh, $Parsed);
 #
@@ -1967,7 +2069,6 @@ sub ImportDuplicate {
 sub ImportPresets {
    my($Dbh, $Parsed) = @_;
    my($srcFile, $tstData, $lastPid);
-   my(@paletteWork);
    
    &DisplayDebug("ImportPresets file: '$$Parsed{'file0'}'  tag: '$$Parsed{'tag0'}'" .
       "  group: '$$Parsed{'group0'}'  wled: '$$Parsed{'wled0'}'");
@@ -1985,7 +2086,7 @@ sub ImportPresets {
                &ColorMessage("\nFile content doesn't look like WLED preset data. ",
                              "BRIGHT_YELLOW", 'nocr');
                my $resp = &PromptUser('Continue? [y/N] -> ','BRIGHT_YELLOW');
-               print "\n";
+               &ColorMessage('', "WHITE", '');
                return 0 unless ($resp =~ m/y/i);
             }
             $srcFile = $$Parsed{'file0'};
@@ -2029,7 +2130,9 @@ sub ImportPresets {
    my @presetFields = ('Pid','Pname','Qll','Src','Type','Date','Pdata');
    my @keywordFields = ('Kid','Tag','Group');
    my @paletteFields = ('Palid','Plid','Plnum','Pldata');
+   my @ledmapFields = ('Mapid','Mlid','Mnum','Mdata');
    my %palData = ();   # Keeps track of already loaded palette data.
+   my %mapData = ();   # Keeps track of already loaded ledmap data.
    
    # Step through the input presets. Isolate the data for the separate 
    # database fields. Check that each record begins with a preset id. 
@@ -2111,7 +2214,7 @@ sub ImportPresets {
       # Perform Palette table processing. Check all segments for custom palette entries;
       # range 247-256. If importing direct wled, get the palette data. Otherwise, read 
       # the appropriate local file. If neither source is available, insert with no Pldata
-      # and user message. Lid value links record(s) with preset.
+      # and display a user message. Lid value links record(s) with preset.
       foreach my $segref (@{ $jsonRef->{$jKey}{'seg'} }) {     # Process each segment.
          if ($segref->{'pal'} >= 247 and $segref->{'pal'} <= 256) {
             $dbData{'Plnum'} = $segref->{'pal'};
@@ -2135,6 +2238,34 @@ sub ImportPresets {
                if ($#check < 0) {
                   return 1 if (&InsertDbData($Dbh, 'Palettes', \%dbData, \@paletteFields) == -1);
                }
+            }
+         }
+      }
+      # Perform ledmap table processing. Check for ledmap entry; ledmap:x (0-9). If
+      # importing direct wled, get the ledmap data. Otherwise, read the appropriate
+      # local file. If neither source is available, insert with no Mdata and display
+      # a user message. Lid value links record(s) with preset.
+      if (exists($jsonRef->{$jKey}{'ledmap'})) {
+         $dbData{'Mnum'} = $jsonRef->{$jKey}{'ledmap'};
+         $dbData{'Mapid'} = 'NULL';                 # Unique DB generated value.
+         $dbData{'Mlid'} = $dbData{'Kid'};          # New preset record Lid value.
+         unless (%mapData) {                        # Load palettes if empty hash.
+            return 1 if (&LoadLedmaps($Parsed, \%mapData));
+         } 
+         if (exists($mapData{ $dbData{'Mnum'} })) {
+            $dbData{'Mdata'} = $mapData{ $dbData{'Mnum'} };
+         }
+         else {
+            $dbData{'Mdata'} = '';
+            &ColorMessage("   No ledmap data entry $dbData{'Mnum'}.", "YELLOW", ''); 
+         }
+         # Insert the ledmap record if not already present for this Lid.
+         if ($dbData{'Mdata'} ne '') {
+            my @check = ();
+            my $query = "SELECT Mapid FROM Ledmaps WHERE Mlid = $dbData{'Mlid'};";
+            return 1 if (&SelectDbArray($Dbh, $query, \@check));
+            if ($#check < 0) {
+               return 1 if (&InsertDbData($Dbh, 'Ledmaps', \%dbData, \@ledmapFields) == -1);
             }
          }
       }
@@ -2191,7 +2322,7 @@ sub ImportPresets {
 # =============================================================================
 sub ExportPresets {
    my($Dbh, $Parsed, $LidList) = @_;
-   my(@pdata, $pcntStr, @pldata, %palHash);
+   my(@pdata, $pcntStr, @pldata, %palHash, @mdata, %mapHash);
 
    &DisplayDebug("ExportPresets ...  LidList: $LidList");
    &DisplayDebug("'$$Parsed{'file1'}'  '$$Parsed{'wled1'}'");
@@ -2225,7 +2356,16 @@ sub ExportPresets {
       my $name = join('', 'palette', abs($data[0] - 256), '.json');
       $palHash{$name} = $data[1];
    }
-   print "\n";
+   # Get associated ledmaps.
+   $query = "SELECT Mnum,Mdata FROM Ledmaps WHERE Mlid IN ($LidList);";
+   return 1 if (&SelectDbArray($Dbh, $query, \@mdata));
+   foreach my $rec (@mdata) {
+      my @data = split('\|', $rec);
+      my $name = join('', 'ledmap', $data[0], '.json');
+      $mapHash{$name} = $data[1];
+   }
+   &ColorMessage('', "WHITE", '');
+   
    # Export to file.
    if (exists($$Parsed{'file1'})) {
       &DisplayDebug("ExportPresets file: $$Parsed{'file1'}");
@@ -2236,7 +2376,7 @@ sub ExportPresets {
             &ColorMessage("   Export aborted.","YELLOW", '');
             return 1;
          }
-         print "\n";
+         &ColorMessage('', "WHITE", '');
       }
       return 1 if (&WriteFile($$Parsed{'file1'}, \@pdata, ''));
       my $srcPath = '';
@@ -2249,6 +2389,13 @@ sub ExportPresets {
          $file = join('/', $srcPath, $file) if ($srcPath ne '');
          return 1 if (&WriteFile($file, \@array, ''));
          &ColorMessage("   Palette file created: $file","YELLOW", '');
+      }
+      foreach my $file (sort keys(%mapHash)) {
+         my @array = ("$mapHash{$file}");
+         return 1 if (&ValidateJson(\@array, '', '', '')); # Validate the JSON.
+         $file = join('/', $srcPath, $file) if ($srcPath ne '');
+         return 1 if (&WriteFile($file, \@array, ''));
+         &ColorMessage("   Ledmap file created: $file","YELLOW", '');
       }
       &ColorMessage("$pcntStr to $$Parsed{'file1'}","YELLOW", '');
    }
@@ -2270,6 +2417,15 @@ sub ExportPresets {
          return 1 if (&WriteFile($file, \@array, ''));
          return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file));
          &ColorMessage("   Sent palette to WLED: $name","YELLOW", '');
+         unlink $file;
+      }
+      foreach my $name (sort keys(%mapHash)) {
+         my $file = join('/', $dirPath, $name);
+         my @array = ("$mapHash{$name}");
+         return 1 if (&ValidateJson(\@array, '', '', '')); # Validate the JSON.
+         return 1 if (&WriteFile($file, \@array, ''));
+         return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file));
+         &ColorMessage("   Sent ledmap to WLED: $name","YELLOW", '');
          unlink $file;
       }
       &ColorMessage("$pcntStr to WLED.","YELLOW", '');
@@ -2476,7 +2632,7 @@ sub DisplayPresets {
    my($Dbh, $Parsed, $Pdata) = @_;
    my @cols = ('Type','Pid','Pname','Qll','Date','Lid','Tag','Group');
    my @cwid = (6,3,11,4,19,4,3,5);  # Default column widths
-   my ($name, $sep, $col, @src, @pdata, @pldata);
+   my ($name, $sep, $col, @src);
    
    # Return if no data to process.
    if ($#$Pdata < 0) {
@@ -2498,19 +2654,19 @@ sub DisplayPresets {
    }
    # Print column formatted results.
    # ----- Title line.
-   print "\n";
+   &ColorMessage('', "WHITE", '');
    for (my $x = 0; $x <= $#cols; $x++) {
       printf("%-$cwid[$x]s   ", $cols[$x]);
    }
-   print "\n";
+   &ColorMessage('', "WHITE", '');
    # ----- Separator line.
    for (my $x = 0; $x <= $#cols; $x++) {
       $sep = '-' x $cwid[$x];
       printf("%-$cwid[$x]s   ", $sep);
    }   
-   print "\n";
+   &ColorMessage('', "WHITE", '');
    # ----- Data line, Pdata, and pal if specified.
-   my @pdata = ();   my @pldata = ();
+   my @pdata = ();   my @pldata = ();   my (@mdata) = ();
    foreach my $rec (@$Pdata) {
       my $lid = 0;
       my @data = split('\|', $rec);  # split on |. \| escapes 'or' meaning.
@@ -2519,13 +2675,12 @@ sub DisplayPresets {
          $lid = $data[$x] if ($cols[$x] =~ m/^Lid$/i); # Lid of record.
          print $col;
       }
-      print "\n";
+      &ColorMessage('', "WHITE", '');
       # Get and display preset Pdata if specified by user.
       if (exists($$Parsed{'pdata0'}) and $lid != 0) {
          my $query = "SELECT Pdata FROM Presets WHERE Lid = $lid;";
          unless (&SelectDbArray($Dbh, $query, \@pdata)) {
             &ColorMessage("$pdata[0]", 'CYAN', '');
-            print "\n";
          }
       }
       # Get and display palette data if specified by user.
@@ -2533,18 +2688,31 @@ sub DisplayPresets {
          my $query = "SELECT Plnum,Pldata FROM Palettes WHERE Plid = $lid;";
          unless (&SelectDbArray($Dbh, $query, \@pldata)) {
             if ($#pldata >= 0) {
-               print "\n" if ($#pdata >= 0);
+               &ColorMessage('', "WHITE", '') if ($#pdata >= 0);
                foreach my $rec (@pldata) {
                   my @data = split('\|', $rec);
                   my $name = join('', 'palette', abs($data[0] - 256));
                   &ColorMessage("$name  $data[0]  $data[1]", 'CYAN', '');
                }
-               print "\n";
+            }
+         }
+      }
+      # Get and display ledmap data if specified by user.
+      if (exists($$Parsed{'map0'}) and $lid != 0) {
+         my $query = "SELECT Mnum,Mdata FROM Ledmaps WHERE Mlid = $lid;";
+         unless (&SelectDbArray($Dbh, $query, \@mdata)) {
+            if ($#mdata >= 0) {
+               &ColorMessage('', "WHITE", '') if ($#pdata >= 0 or $#pldata >= 0);
+               foreach my $rec (@mdata) {
+                  my @data = split('\|', $rec);
+                  my $name = join('', 'ledmap', $data[0]);
+                  &ColorMessage("$name  $data[1]", 'CYAN', '');
+               }
             }
          }
       }
    }
-   print "\n" if ($#pdata < 0 and $#pldata < 0);
+   &ColorMessage('', "WHITE", '');
    return 0;
 }
 
@@ -2567,7 +2735,7 @@ sub DisplayPresets {
 #    0 = Success,  1 = Error.
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::ChildPid
+#    None
 # =============================================================================
 sub ShowOnWled {
    my($Dbh, $Parsed, $Pdata) = @_;
@@ -2576,62 +2744,32 @@ sub ShowOnWled {
    return 1 if ($#$Pdata < 0);  # Nothing to do.
    my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
    my $url = "http://$ip/json/state";
-   if ($#$Pdata == 0 or $^O =~ m/Win/i) {  # Can't reliably fork in Windows.
-      return &PostIt($$Pdata[0], $url);
-   }
-   # More than 1 preset to display. We fork and cycle the presets until another
-   # librarian command is entered. The command parser will kill the child pid.
-   if ($main::ChildPid != 0) {   # Previous fork still running?
-      kill 'TERM', $main::ChildPid;
-      $main::ChildPid = 0;
-      sleep .25;
-   }
-   my $pid = fork();
-   if ( $pid == 0 ) {
-      # Child process.
-      while (1) {
-         foreach my $record (@$Pdata) {
-            exit(0) if (&PostIt($record, $url));
-            sleep 5;
-         }
-      }
-      exit(0);
-   } 
-   elsif ( $pid > 0) {
-      # Master has a new child.
-      $main::ChildPid = $pid;
-   }
-   else {
-      &ColorMessage("   Could not fork: $!","BRIGHT_RED", '');
-      return 1;
-   }   
+   return &PostIt($$Pdata[0], $url);
       
    # ----------
    # Post preset string to WLED.
    sub PostIt {
       my($Record, $Url) = @_;
 
-      my @temp = split('\|', $Record);     # 5th is Lid
+      my @temp = split('\|', $Record);  # Lid is 5th column of record
       my $query = "SELECT Pdata FROM Presets WHERE Lid = $temp[5];";
       return 1 if (&SelectDbArray($Dbh, $query, \@data));
       my $json = $data[0];
-      if ($json =~ m/"playlist":/) {
+      if ($json =~ m/"playlist":/) {   # Just playlist data pairs.
          $json = substr($json, index($json, '"playlist"'));
-         return 1 if(&PostJson($Url, '{"on":true}'));
+         return 1 if(&PostJson($Url, '{"on":true}'));  # Leds on.
       }
-      elsif ($json =~ m/"seg":/) {      
+      elsif ($json =~ m/"seg":/) {     # Just segment data pairs. 
          $json = substr($json, index($json, '"seg"'));
-         return 1 if(&PostJson($Url, '{"on":true}'));
+         return 1 if(&PostJson($Url, '{"on":true}'));  # Leds on.
       }
       else {
-         $json =~ s/^"\d+":\{//;
+         $json =~ s/^"\d+":\{//;       # Remove preset id container. 
          $json =~ s/\}$//;
       }
-      return 1 if(&PostJson($Url, "{$json}"));
+      return 1 if(&PostJson($Url, "{$json}"));  # Send preset json.
       return 0;
    }
-   
-   return 0;
 }
 
 # =============================================================================
@@ -2820,7 +2958,7 @@ sub DeletePresets {
       "FROM Presets LEFT JOIN Keywords ON Presets.Lid = Keywords.Kid",
       $where, "ORDER BY Lid;");
    unless (&SelectDbArray($Dbh, $query, \@array)) {
-      print "\n";
+      &ColorMessage('', "WHITE", '');
       return 1 if (&DisplayPresets($Dbh, $Parsed, \@array));
       my $lids = &GetLidList(\@array, \@valid);
       &DisplayDebug("ShowPresets lids: 'lids'");
@@ -2839,6 +2977,7 @@ sub DeletePresets {
          if (&DeleteDbData($Dbh, 'Presets', $lid) == 0) {
             &DeleteDbData($Dbh, 'Keywords', $lid);
             &DeleteDbData($Dbh, 'Palettes', $lid);
+            &DeleteDbData($Dbh, 'Ledmaps', $lid);
             $delCnt++;
          }
       }
@@ -3015,6 +3154,20 @@ sub DuplPreset {
             $repData{'Plnum'} = $data[0];
             $repData{'Pldata'} = $data[1];
             return 1 if (&InsertDbData($Dbh, 'Palettes', \%repData, \@paletteCols) == -1);
+         }
+      }
+      # Check for associated ledmap entry and duplicate it too.
+      my $query = "SELECT Mnum,Mdata FROM Ledmaps WHERE Mlid = $$Parsed{'lid0'};";
+      my @mapdata = ();
+      unless (&SelectDbArray($Dbh, $query, \@mapdata)) {
+         my @ledmapCols = ('Mapid','Mlid','Mnum','Mdata');
+         foreach my $rec (@paldata) {
+            my @data = split('\|', $rec);
+            $repData{'Mapid'} = 'NULL';     # Unique DB generated value.
+            $repData{'Mlid'} = $repData{'Kid'};
+            $repData{'Mnum'} = $data[0];
+            $repData{'Mdata'} = $data[1];
+            return 1 if (&InsertDbData($Dbh, 'Ledmaps', \%repData, \@ledmapCols) == -1);
          }
       }
       # Show updated record.
