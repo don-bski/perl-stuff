@@ -14,7 +14,7 @@ support multiple comma separated values. e.g. tag:<w>,<w>. Home key shows this h
 
 Commands:
    show [tag:<w>] [group:<w>] [pid:<i>] [date:<d>] [lid:<i>] [pname:<n>] [qll:<w>]
-          [type:<w>] [pdata] [src] [pal] [wled[:<ip>]]
+          [type:<w>] [pdata] [src] [pal] [map] [wled[:<ip>]]
       + [add [tag:<w>] [group:<w>]]
       + [remove [tag:<w>] [group:<w>]]
       + [export [file:<file>] [wled[:<ip>]]]
@@ -25,6 +25,7 @@ Commands:
    sort [lid|pid|date|pname|tag|group]:[a|d]
    help [add|change|delete|edit|export|general|import|quit|remove|show]
    quit
+
 =====================================================================================
 Enter ->
 ```
@@ -99,11 +100,9 @@ data for each record output.
 
 Option `wled[:<ip>]` will send the preset data to the specified WIFI connected WLED
 instance. Unlike export, this action does not affect existing presets stored on the
-WLED instance. If a playlist is sent, the presets it uses need to be present on the
-WLED instance. Multiple SHOW selected presets are cycled on a 5 second interval in
-linux environments until another commmand is entered. In windows, only the first 
-record is displayed.<br/>
-Example: `SHOW lid:2,4,7 pdata`  or  `SHOW lid:3,9 wled`
+WLED instance. If a playlist is sent, the presets it uses need to be present. If
+multiple records are selected, only the first record is displayed.<br/>
+Example: `SHOW lid:2,4,7 pdata`  or  `SHOW lid:3 wled`
 
 #### ADD command
 `ADD tag:<w>[:<w>] group:<w>[:<w>]`<br/>
