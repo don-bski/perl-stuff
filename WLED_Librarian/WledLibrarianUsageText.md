@@ -59,7 +59,7 @@ The following options can be specified on the program start CLI:
    -p            Disable import preset ID checks.
    -r            Disable import preset data reformat.
    -f <file>     Use the specified database file.
-   -c '<cmds>'   Process <cmds> non-interactive.
+   -c '<cmd>'    Process <cmds> non-interactive.
 ```
 The `-p` option disables preset ID duplication checks during import. Preset data are
 import with existing ID values. Also during import, the preset data is reformatted for
@@ -70,9 +70,10 @@ The `-f` option specifies an alternate database file. This is a wholly seperate 
 that is created/used instead of the default database. Alternate databases are useful
 in some test scenarios or when read-only access is user set by OS file permissions. 
 
-The `-c` option performs the specified command(s) directly. Results are sent to
-STDOUT and errors to STDERR. Used to integrate with a script or other external
-program. `"<cmds>"` must comform to the interactive usage rules.
+The `-c` option performs the specified command directly; no interactive prompt. Piped
+STDIN input is also supported. Results are sent to STDOUT and STDERR. Used to integrate 
+with an external program. `"<cmd>"` and piped input must comply with interactive input 
+usage rules.
 
 #### Interactive Keys
 ```
