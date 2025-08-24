@@ -1,4 +1,4 @@
-**8-24-2025** - WledLibrarian v0.5 corrects issues with the -c option and operating system pipe. These
+**8-24-2025** - WledLibrarian v0.5 corrects issues with the -c option and operating system pipes. These
 methods can be used to integrate the librarian with external programs for higher level integration or
 automation.<br/> 
 
