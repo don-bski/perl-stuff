@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-librarian.pl                                             8-19-2025
+# FILE: wled-librarian.pl                                             8-24-2025
 #
 # SERVICES: WLED Preset Librarian  
 #
@@ -40,9 +40,9 @@ if (length($ExecutableName) != length($0)) {
 }
 unshift (@INC, $WorkingDir);
 
-# --- Add the executable included perl modules. Eval method is needed for
-#     windows environment. However, this may interfere with code syntax 
-#     error reporting in linux. Use 'use' during linux code development.
+# --- Use eval to add the perl modules for the PAR::Packer created windows executable.
+#     Eval method is needed in windows environment. However, this may interfere with
+#     code syntax error reporting in linux. Use 'use' during linux code development.
 
 eval "use WledLibrarianLib";
 eval "use WledLibrarianDBI";
@@ -79,15 +79,15 @@ GENERAL DESCRIPTION
    processing which may result in inconsistent key:value pair location within 
    the pdata.
        
-   The -c option performs the specified command(s) directly. Results are sent to
-   STDOUT and errors to STDERR. Used to integrate with a script or other external
-   program. <cmds> must comform to the operational usage rules. See operational 
-   help for details. 
+   The -c option performs the specified command directly; no interactive prompt.
+   Piped STDIN input is also supported. Results are sent to STDOUT and STDERR.
+   Used to integrate with an external program. <cmd> and piped input must comply
+   with interactive input usage rules. See operational help for details. 
 
    For operational help, launch the program and enter 'help' at the prompt.
 
 USAGE:
-   $ExecutableName  [-h] [-a] [-d] [-p] [-r] [-f <file>] [-c '<cmds>']
+   $ExecutableName  [-h] [-a] [-d] [-p] [-r] [-f <file>] [-c '<cmd>']
 
    -h              Displays this usage text.
    -a              Monochrome output. No ANSI color.
@@ -96,7 +96,7 @@ USAGE:
    -r              Disable import preset data reformat.
 
    -f <file>       Use the specified database file.
-   -c '<cmds>'     Process <cmds> non-interactive.
+   -c '<cmd>'      Process <cmd> non-interactive.
                   
 EXAMPLES:
    $ExecutableName
@@ -109,6 +109,12 @@ EXAMPLES:
    $ExecutableName -c 'SHOW tag:xmas EXPORT wled:4.3.2.1'
       Run program to show the presets tagged with xmas and export them to the
       active WLED at 4.3.2.1.
+      
+   cat cmd.txt | $ExecutableName
+      Pipes the librarian commands in cmd.txt to the librarian. Example cmd.txt:
+         # This is a comment
+         sort pid
+         show tag:hween  
 
 ===============================================================================
 ));
@@ -141,9 +147,6 @@ sub Ctrl_C {
    sleep .1;
    exit(0);
 }
-sub SigTerm {
-   exit(0);
-}
 
 # =============================================================================
 # MAIN PROGRAM
@@ -161,17 +164,20 @@ if (exists( $cliOpts{h} )) {
 # Setup for processing termination signals. Provides for properly closing the
 # database by the Ctrl_C subroutine. Signal TERM calls a seperate subroutine.
 # Used to simply exit a child process.                          
-foreach my $sig ('INT','QUIT','ABRT','STOP','KILL','HUP') {
+foreach my $sig ('INT','QUIT','ABRT','STOP','KILL','HUP','TERM') {
    $SIG{$sig} = \&Ctrl_C;
 }
-$SIG{TERM} = \&SigTerm;
-$SIG{CHLD} = 'IGNORE';
 
 # ==========
-# Open database connection. Create a new database if user confirmed.
+# Open database connection. If input is piped, terminate if DB not found. 
+# Otherwise, prompt user to create a new database.
 $DbFile = join('/', cwd(), $DbFile);          # Add cwd to default database file.
 $DbFile = $cliOpts{f} if (exists( $cliOpts{f} ));  # Use CLI option if specified.
 unless (-e $DbFile) {
+   unless (-t STDIN) {     # Pipe input?
+      &ColorMessage("Database file not found: $DbFile", "BRIGHT_RED", '');
+      exit(1);
+   }
    &ColorMessage("\nDatabase file not found: $DbFile", "BRIGHT_YELLOW", '');
    &ColorMessage("Create a new one? [y|N] -> ", "WHITE", 'nocr');
    my $resp = <STDIN>;
@@ -186,14 +192,23 @@ unless (-e $DbFile) {
 $Dbh = &InitDB($DbFile, '');
 exit(1) if ($Dbh == -1);                # Exit if database was not validated.
 
-my %cmdHash = ('sort' => $Sort);   # Clear command and parsing hash. Set sort.
-if ($cliOpts{c} ne '') {
-   exit(1) if (&ParseInput($Dbh, $cliOpts{c}, \%cmdHash));
-   exit(0);  
-}
-
 # Unbuffered output needed; mainly Windows environments.
 $| = 1;
+
+# Handle piped or user CLI -c specified input.
+my %cmdHash = ();          # Working hash for CLI/pipe specified command.
+unless (-t STDIN) {        # Pipe input?
+   while (<STDIN>) {
+      chomp($_);
+      &DisplayDebug("pipeIn: $_");
+      next if ($_ eq '' or $_ =~ m/^#/);
+      exit(1) if (&ParseInput($Dbh, $_, \%cmdHash));
+   }
+   exit(0);
+}
+if ($cliOpts{c} ne '') {
+   exit(&ParseInput($Dbh, $cliOpts{c}, \%cmdHash));
+}
 
 # ==========
 # Setup the input working hash. See &GetKeyboardInput description for details.

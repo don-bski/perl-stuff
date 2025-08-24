@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           8-19-2025
+# FILE: WledLibrarianLib.pm                                           8-24-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -895,11 +895,15 @@ sub ShowCmdHelp {
          &ColorMessage("   -p            Disable import preset ID checks.", "WHITE", '');
          &ColorMessage("   -r            Disable import preset data reformat.", "WHITE", '');
          &ColorMessage("   -f <file>     Use the specified database file.", "WHITE", '');
-         &ColorMessage("   -c '<cmds>'   Process <cmds> non-interactive.\n", "WHITE", '');
+         &ColorMessage("   -c '<cmd>'    Process <cmds> non-interactive.\n", "WHITE", '');
          &ColorMessage("The -p option disables preset ID duplication checks during import. Preset data are", "WHITE", ''); 
          &ColorMessage("import with existing ID values. Also during import, the preset data is reformatted", "WHITE", ''); 
          &ColorMessage("for user readability (SHOW pdata). The -r option disables this processing which may", "WHITE", ''); 
          &ColorMessage("result in inconsistent key:value pair location within the pdata.\n", "WHITE", '');
+         &ColorMessage("The -c option performs the specified command directly; no interactive prompt. Piped", "WHITE", '');
+         &ColorMessage("STDIN input is also supported. Program results are sent to STDOUT and STDERR. Used to", "WHITE", '');
+         &ColorMessage("integrate with an external program. <cmd> and piped input must comply with interactive", "WHITE", '');
+         &ColorMessage("input usage rules.\n", "WHITE", ''); 
          &ColorMessage("Available program CLI keys:\n", "WHITE", ''); 
          &ColorMessage("   UpArrow  DnArrow     Recall previously used command.", "WHITE", '');
          &ColorMessage("   LftArrow  RgtArrow   Move curcor position in current CLI.", "WHITE", '');

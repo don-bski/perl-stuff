@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ===================================================================================
-# FILE: WledLibrarianDBI.pm                                                8-19-2025
+# FILE: WledLibrarianDBI.pm                                                8-24-2025
 #
 # DESCRIPTION:
 #   This perl module provides SQLite database interfacing functions for the WLED
@@ -22,14 +22,14 @@ require Exporter;
 our @ISA = qw(Exporter);
 
 our @EXPORT = qw(
+   DisplayDebug
+   ColorMessage
    InitDB
    InsertDbData
    SelectDbArray
    DeleteDbData
    UpdateDbData
    DumpDbTable
-   DisplayDebug
-   ColorMessage
 );
    
 # ------------------------------------------------------------------------------
@@ -110,12 +110,17 @@ sub ColorMessage {
       'reset' => "\e[0m");
    
    $cr = '' if ($Nocr ne '');
+   
+   # BRIGHT_RED is used throughout the program to indicate an error condition.
+   # These messages are output to STDERR.
+   my $fh = 'STDOUT';
+   $fh = 'STDERR' if ($Color =~ m/BRIGHT_RED/i);
 
    if ($Color ne '' and not defined($main::cliOpts{a})) {
-      print STDOUT $colConst{ lc($Color) }, $Message, $colConst{'reset'}, "$cr";
+      print $fh $colConst{ lc($Color) }, $Message, $colConst{'reset'}, "$cr";
    }
    else {
-      print STDOUT $Message, "$cr";
+      print $fh $Message, "$cr";
    }
    return 0;
 }
