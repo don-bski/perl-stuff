@@ -5,9 +5,20 @@ the user as needed. For example, 'xmas' might identify the presets used in a hol
 Presets can be selected ad-hoc or by tag/group word for export to a WLED presets file or 
 directly to WLED over WIFI. 
 
-The program is currently beta release code. It was developed and tested in Linux. Preliminary
-testing in the Windows environment (strawberry perl) has also been completed. Launch the 
-program and enter **Help** for operational details. [WledLibrarian usage text](WledLibrarianUsageText.md).
+The program has been tested in Linux and Windows (strawberry perl) environments. To install on 
+Linux, download the contents of the Wled_Librarian folder to a user directory. Launch the 
+program, e.g. `perl WledLibrarian.pl`, in a CLI terminal. Use `cpanm` to install any dependent 
+perl modules that are identified. 
+
+To install the PAR::Packer generated Windows exe, download the WledLibrarian zip file to a user 
+folder and unzip it. Right click the WledLibrarian.exe file and select `CRC SHA` to check its 
+SHA256 to the value shown below. To run WledLibrarian, right click and select Open. To use any 
+ledLibrarian.exe CLI options, create a shortcut and add them via the shortcut properties. 
+ALternately, open a Command window, change to the WledLibrarian folder, and enter 
+`WledLibrarian.exe`. The -h option will display startup available options.
+
+When WledLibrarian is running, enter **Help** for operational details. 
+[WledLibrarian usage text](WledLibrarianUsageText.md).
 
 Coded in Perl, the librarian utilizes the [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite) 
 module which is a self-contained RDBMS database. Librarian commands provide the database 
@@ -27,5 +38,5 @@ with a number of LED strip types, primarily WS2815, and ESP32. Other hardware co
 errors due to untested WLED json keys. A CLI option is available to disable this processing.<br/>
 
 **WledLibrarian-v0.5.zip** - WledLibrarian standalone Windows executable, built with perl PAR::Packer.<br/>
-WledLibrarian.exe `md5: 4b5e766ef06adbe7c749f2edd87f2b77`<br/><br/>
+WledLibrarian.exe `SHA256: 5B8B462845338B299142CCBB10062B24BB36E96767021EC59EED3A8FCBF7DFA1`<br/><br/>
 <img src="librarian.png" alt="screenshot" width="600"/>
