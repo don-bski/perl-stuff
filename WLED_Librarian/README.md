@@ -18,7 +18,7 @@ ALternately, open a Command window, change to the WledLibrarian folder, and ente
 `WledLibrarian.exe`. The -h option will display startup available options.
 
 When WledLibrarian is running, enter **Help** for operational details. 
-[WledLibrarian usage text](WledLibrarianUsageText.md).
+[WledLibrarian usage text](WledLibrarianUsageText.md) , [WledLibrarian Tutorial](WledLibrarianTutorial.md).
 
 Coded in Perl, the librarian utilizes the [DBD::SQLite](https://metacpan.org/pod/DBD::SQLite) 
 module which is a self-contained RDBMS database. Librarian commands provide the database 
