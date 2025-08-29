@@ -37,6 +37,6 @@ The program reformats the preset JSON during import to improve user readability.
 with a number of LED strip types, primarily WS2815, and ESP32. Other hardware combinations may reveal 
 errors due to untested WLED json keys. A CLI option is available to disable this processing.<br/>
 
-**WledLibrarian-v0.5.zip** - WledLibrarian standalone Windows executable, built with perl PAR::Packer.<br/>
-WledLibrarian.exe `SHA256: 5B8B462845338B299142CCBB10062B24BB36E96767021EC59EED3A8FCBF7DFA1`<br/><br/>
+**WledLibrarian-v0.6.zip** - WledLibrarian standalone Windows executable, built with perl PAR::Packer.<br/>
+WledLibrarian.exe `SHA256: 1ADFC733C06C7424A9543A9C5D0C36AE1F7162A2167D298A71D1CF24230DF0BE`<br/><br/>
 <img src="librarian.png" alt="screenshot" width="600"/>
