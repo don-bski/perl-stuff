@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-librarian.pl                                             8-24-2025
+# FILE: wled-librarian.pl                                             8-29-2025
 #
 # SERVICES: WLED Preset Librarian  
 #
@@ -50,7 +50,7 @@ eval "use WledLibrarianDBI";
 #use WledLibrarianDBI;
 
 our %cliOpts = ();                           # CLI options working hash
-getopts('hdaprc:', \%cliOpts);               # Load CLI options hash
+getopts('hadprf:c:', \%cliOpts);             # Load CLI options hash
 our $DbFile = 'wled_librarian.dbs';          # Default database file
 our $Dbh;                                    # Working reference to DB object
 our $ChildPid = 0;                           # Pid of forked child. ShowOnWled

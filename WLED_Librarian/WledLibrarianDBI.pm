@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ===================================================================================
-# FILE: WledLibrarianDBI.pm                                                8-24-2025
+# FILE: WledLibrarianDBI.pm                                                8-29-2025
 #
 # DESCRIPTION:
 #   This perl module provides SQLite database interfacing functions for the WLED
@@ -333,7 +333,7 @@ sub InsertDbData {
    my(@values) = ();
 
    &DisplayDebug("InsertDbData - Table: '$Table'   Field: '@$Field'");
-   if ($Table ne '' and $#$Fields >= 0) {
+   if ($Table ne '' and $#$Field >= 0) {
       foreach my $key (@$Field) {
          if ($$Data{$key} =~ m/^NULL$/i) {
             push (@values, $$Data{$key});

@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           8-24-2025
+# FILE: WledLibrarianLib.pm                                           8-29-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -3018,6 +3018,10 @@ sub EditPresets {
    my($opt);   my(@array);
 
    if (exists($$Parsed{'lid0'})) {
+      if ($$Parsed{'lid0'} =~ m/,/) {
+         &ColorMessage("   Specify only a single lid value.\n", 'YELLOW', '');
+         return 1;
+      }
       $values{'Lid'} = $$Parsed{'lid0'};
       push (@columns, 'src') if (exists($$Parsed{'src0'}));  # Add src column.
       
@@ -3091,6 +3095,10 @@ sub DuplPreset {
    my(@array, $key);
 
    if (exists($$Parsed{'lid0'})) {
+      if ($$Parsed{'lid0'} =~ m/,/) {
+         &ColorMessage("   Specify only a single lid value.\n", 'YELLOW', '');
+         return 1;
+      }
       # Get the Presets table column names. Returns a comma separated list.
       $query = "SELECT GROUP_CONCAT(NAME,',') FROM PRAGMA_TABLE_INFO('Presets');";
       return 1 if (&SelectDbArray($Dbh, $query, \@array));
