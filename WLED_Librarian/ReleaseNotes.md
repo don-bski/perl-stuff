@@ -1,3 +1,7 @@
+**8-29-2025** - WledLibrarian v0.6 corrects a bug with the -f option. The option was not recognized
+when specified on the start CLI. The DUPL and EDIT commands were corrected to properly reject multiple
+Lids. A Wled Librarian tutorial is available. It is linked in the README.md information.
+
 **8-24-2025** - WledLibrarian v0.5 corrects issues with the -c option and operating system pipes. These
 methods can be used to integrate the librarian with external programs for higher level integration or
 automation. There are no database related changes. Existing v0.4 databases will be functional.<br/> 
