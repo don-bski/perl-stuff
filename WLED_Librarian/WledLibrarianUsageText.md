@@ -208,7 +208,7 @@ column is `Lid:a`.<br/>
 Example: `SORT date:d`
 
 #### CFG command
-`CFG [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|:p]]`
+`CFG [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|:p]]`<br/>
 Sets the default configuration value for power-on-preset (pop) and/or global brightness
 (bri) on the WIFI connected WLED instance. Include the wled: option if the WLED instance
 is not using address 4.3.2.1. These settings are not kept in the database. They are
