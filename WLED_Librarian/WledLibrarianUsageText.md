@@ -207,6 +207,21 @@ hig), **d**escending, high to low. The setting remains in effect until changed. 
 column is `Lid:a`.<br/>
 Example: `SORT date:d`
 
+#### CFG command
+`CFG [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|:p]]`
+Sets the default configuration value for power-on-preset (pop) and/or global brightness
+(bri) on the WIFI connected WLED instance. Include the wled: option if the WLED instance
+is not using address 4.3.2.1. These settings are not kept in the database. They are
+stored on the WLED instance and used by WLED during startup. The pop: specified preset is
+activated on the WLED instance for confirmation when set. If no options are specified
+the WLED instance is read and the current values for these parameters are displayed.
+
+The info: option displays the current WLED configuration and preset data that is present
+on the WLED instance. Use :c or :p to limit the output; unspecified displays both. The
+configuration JSON is complete with the pop: and bri: settings shown in the 'def' section.
+The preset data in this output is abreviated. See database (pdata) for full JSON.<br/>
+Examples: `CFG pop:3   CFG info`
+
 #### HELP command
 `HELP [add | change | delete | edit | export | general | import | quit | remove | show]`<br/>
 Displays the full help text on the console. To limit the ouput to a specific area, add 
