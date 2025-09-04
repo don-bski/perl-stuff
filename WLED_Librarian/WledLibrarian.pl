@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-librarian.pl                                             8-29-2025
+# FILE: wled-librarian.pl                                             9-04-2025
 #
 # SERVICES: WLED Preset Librarian  
 #
@@ -23,10 +23,6 @@ use Term::ReadKey;
 use DBI;
 use File::Copy;
 use Time::HiRes qw(sleep);
-use Data::Dumper;
-# use warnings;
-# $Data::Dumper::Sortkeys = 1;
-# print Dumper $href;
 
 # ==============================================================================
 # Global Variables

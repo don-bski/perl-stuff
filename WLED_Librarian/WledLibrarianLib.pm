@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           8-29-2025
+# FILE: WledLibrarianLib.pm                                           9-04-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -25,6 +25,7 @@ our @EXPORT = qw(
    DateTime
    ValidateJson
    FormatPreset
+   CheckVarType
    GetTmpDir
    PostJson
    PostUrl
@@ -46,6 +47,7 @@ our @EXPORT = qw(
    ShowPresets
    DeletePresets
    DuplPresets
+   DefCfg
 );
 
 use WledLibrarianDBI;
@@ -53,7 +55,7 @@ use LWP::UserAgent;
 use Term::ReadKey;
 use DBI  qw(:utils);
 use JSON;
-# use Data::Dumper;
+use Data::Dumper;
 # use warnings;
 
 # =============================================================================
@@ -311,7 +313,7 @@ sub FormatPreset {
                $done1{$key} = 'done';
                foreach my $udn (keys(%done1)) {          # Check/process undone keys.
                   next if ($done1{$udn} ne '');
-                  my $value = &chkType($udn, $$JsonRef{$udn});
+                  my $value = &CheckVarType('p', $udn, $$JsonRef{$udn});
                   $spData .= join('', '"', $udn, '":', $value, ',');
                   $done1{$udn} = 'done';
                }
@@ -319,7 +321,7 @@ sub FormatPreset {
                last;
             }
             else {
-               my $value = &chkType($key, $$JsonRef{$key});
+               my $value = &CheckVarType('p', $key, $$JsonRef{$key});
                $spData .= join('', '"', $key, '":', $value, ',');
                $done1{$key} = 'done';
             }
@@ -343,7 +345,7 @@ sub FormatPreset {
                $done2{$key} = 'done';
             }
             else {
-               my $value = &chkType($key, $playref->{$key});
+               my $value = &CheckVarType('p', $key, $playref->{$key});
                if ($key eq 'r') {
                   $spData .= join('', "\n$tab", '"', $key, '":', $value, ',');
                } 
@@ -359,7 +361,7 @@ sub FormatPreset {
       }
       foreach my $key (keys(%done2)) {             # Check/process undone keys.
          next if ($done2{$key} ne '');
-         my $value = &chkType($key, $playref->{$key});
+         my $value = &CheckVarType('p', $key, $playref->{$key});
          $spData .= join('', '"', $key, '":', $value, ',');
          $done2{$key} = 'done';
       }
@@ -385,7 +387,7 @@ sub FormatPreset {
                $done1{$key} = 'done';
                foreach my $udn (keys(%done1)) {       # Check/process undone keys.
                   next if ($done1{$udn} ne '');
-                  my $value = &chkType($udn, $$JsonRef{$udn});
+                  my $value = &CheckVarType('p', $udn, $$JsonRef{$udn});
                   $spData .= join('', '"', $udn, '":', $value, ',');
                   $done1{$udn} = 'done';
                }
@@ -394,7 +396,7 @@ sub FormatPreset {
             }
             else {
                if (exists($$JsonRef{$key})) {
-                  my $value = &chkType($key, $$JsonRef{$key});
+                  my $value = &CheckVarType('p', $key, $$JsonRef{$key});
                   $spData .= join('', '"', $key, '":', $value, ',');
                }
                $done1{$key} = 'done';
@@ -417,7 +419,7 @@ sub FormatPreset {
             @order = ('id','start','stop','grp','spc','of','on','bri','frz');
             foreach my $key (@order) {                    # 2nd line keys
                if (exists($segref->{$key})) {
-                  my $value = &chkType($key, $segref->{$key});
+                  my $value = &CheckVarType('p', $key, $segref->{$key});
                   $spData .= join('', '"', $key, '":', $value, ',');
                   $done2{$key} = 'done';
                }
@@ -439,7 +441,7 @@ sub FormatPreset {
                      $done2{$key} = 'done';
                   }
                   else {
-                     my $value = &chkType($key, $segref->{$key});
+                     my $value = &CheckVarType('p', $key, $segref->{$key});
                      $spData .= join('', '"', $key, '":', $value, ',');
                      $done2{$key} = 'done';
                   }
@@ -452,7 +454,7 @@ sub FormatPreset {
             @order = ('set','n','o1','o2','o3','si','m12','mi','cct'); 
             foreach my $key (@order) {                         # 4th line keys
                if (exists($segref->{$key})) {
-                  my $value = &chkType($key, $segref->{$key});
+                  my $value = &CheckVarType('p', $key, $segref->{$key});
                   $spData .= join('', '"', $key, '":', $value, ',');
                   $done2{$key} = 'done';
                }
@@ -463,7 +465,7 @@ sub FormatPreset {
                
             foreach my $key (keys(%done2)) {      # Check/process undone keys.
                next if ($done2{$key} ne '');
-               my $value = &chkType($key, $segref->{$key});
+               my $value = &CheckVarType('p', $key, $segref->{$key});
                $spData .= join('', '"', $key, '":', $value, ',');
                # Don't mark these done so next segment gets them added too.
             }
@@ -502,12 +504,33 @@ sub FormatPreset {
    my $check = join('', '{' ,$spData, '}');
    return '' if (&ValidateJson('', \$check, '', ''));
    return $spData;
+}
    
-   # ----------
-   # This private sub sets boolean values to true/false and encloses strings
-   # in double quotes. Any undefined key is returned as string.  
-   sub chkType {
-      my($Key, $Value) = @_;
+# =============================================================================
+# FUNCTION:  CheckVarType
+#
+# DESCRIPTION:
+#    This routine returns boolean values as 'true'/'false' and encloses strings
+#    in double quotes. Any undefined key is returned as string.  
+#
+# CALLING SYNTAX:
+#    $var = &CheckVarType($Group, $Key, $Value);
+#
+# ARGUMENTS:
+#    $Group       'c' (config) or 'p' (preset).
+#    $Key         Key being processed.
+#    $Value       Value being processed.   
+#
+# RETURNED VALUES:
+#    Processed value.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub CheckVarType {
+   my($Group, $Key, $Value) = @_;
+   
+   if ($Group =~ m/p/i) {
       my(%bool) = ('on'=>1,'rev'=>1,'frz'=>1,'r'=>1,'sel'=>1,'mi'=>1,'nl.on'=>1,
          'rY'=>1,'mY'=>1,'tp'=>1,'send'=>1,'sgrp'=>1,'rgrp'=>1,'nn'=>1,'live'=>1);
       my(%nmbr) = ('id'=>1,'start'=>1,'stop'=>1,'grp'=>1,'spc'=>1,'of'=>1,'bri'=>1,
@@ -528,6 +551,9 @@ sub FormatPreset {
          return join('', '"', $Value, '"');
       }
    }
+   elsif ($Group =~ m/c/i) {
+   }
+   return $Value;
 }
 
 # =============================================================================
@@ -589,14 +615,15 @@ sub GetTmpDir {
 #
 #    my($agent) defines the POST user agent string. decode_json is used to 
 #    validate the json payload. The POST is retried up to 3 times before 
-#    returning error.
+#    returning error unless $NoRetry is set.
 #
 # CALLING SYNTAX:
-#    $result = &PostJson($Url, $Json);
+#    $result = &PostJson($Url, $Json, $NoRetry);
 #
 # ARGUMENTS:
 #    $Url            Endpoint URL.
 #    $Json           Json formatted data to POST
+#    $NoRetry        No error retry if set.
 #
 # RETURNED VALUES:
 #    0 = Success,  1 = Error
@@ -605,15 +632,15 @@ sub GetTmpDir {
 #    None
 # =============================================================================
 sub PostJson {
-   my($Url, $Json) = @_;
+   my($Url, $Json, $NoRetry) = @_;
    my($response, @data);
    my($agent) = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, " .
                 "like Gecko) Chrome/89.0.4389.114 Safari/537.36";
    my($retry) = 3;
-   &DisplayDebug("PostJson: $Url   Json: '$Json'");
+   &DisplayDebug("PostJson: $Url   Json: '$Json'   NoRetry: '$NoRetry'");
 
    my $userAgent = LWP::UserAgent->new(
-      timeout => 5, agent => $agent, protocols_allowed => ['http',]);
+      timeout => 1, agent => $agent, protocols_allowed => ['http',]);
    if ($Json ne '') {
       while ($retry > 0) {
          $response = $userAgent->post($Url,
@@ -622,7 +649,8 @@ sub PostJson {
          );
          last if ($response->is_success);
          $retry--;
-         if ($retry == 0) {
+         print "\n" if ($retry == 2);
+         if ($retry == 0 or $NoRetry ne '') {
             &ColorMessage("HTTP POST $Url", "BRIGHT_RED", '');
             &ColorMessage("HTTP POST error: " . $response->code, "BRIGHT_RED", '');
             &ColorMessage("HTTP POST error: " . $response->message .
@@ -655,14 +683,15 @@ sub PostJson {
 #    correctly named; presets.json.
 #
 #    my($agent) defines the POST user agent string. The POST is retried up to
-#    3 times before returning error.
+#    3 times before returning error unless $NoRetry is set.
 #
 # CALLING SYNTAX:
-#    $result = &PostUrl($Url, $File);
+#    $result = &PostUrl($Url, $File, $NoRetry);
 #
 # ARGUMENTS:
 #    $Url            Endpoint URL.
 #    $File           File to POST
+#    $NoRetry        No error retry if set.
 #
 # RETURNED VALUES:
 #    0 = Success,  1 = Error
@@ -671,7 +700,7 @@ sub PostJson {
 #    None
 # =============================================================================
 sub PostUrl {
-   my($Url, $File) = @_;
+   my($Url, $File, $NoRetry) = @_;
    my($request, $response, @data);
    my($agent) = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, " .
                 "like Gecko) Chrome/89.0.4389.114 Safari/537.36";
@@ -679,7 +708,7 @@ sub PostUrl {
    &DisplayDebug("PostUrl: $Url   File: '$File'");
 
    my $userAgent = LWP::UserAgent->new(
-      timeout => 10, agent => $agent, protocols_allowed => ['http',]);
+      timeout => 1, agent => $agent, protocols_allowed => ['http',]);
    if (-e $File) {
       # Send the data to WLED.
       while ($retry > 0) {
@@ -690,7 +719,7 @@ sub PostUrl {
          last if ($response->is_success);
          $retry--;
          print "\n" if ($retry == 2);
-         if ($retry == 0) {
+         if ($retry == 0 or $NoRetry ne '') {
             &ColorMessage("PostUrl - Can't connect to WLED $Url", "BRIGHT_RED", '');
 #            &ColorMessage("HTTP POST error: " . $response->code, "BRIGHT_RED", '');
 #            &ColorMessage("HTTP POST error: " . $response->message .
@@ -719,14 +748,16 @@ sub PostUrl {
 #    response data in the specified array.
 # 
 #    my($agent) defines the GET user agent string. The received json payload
-#    is validated. The GET is retried up to 3 times before returning error.
+#    is validated. The GET is retried up to 3 times before returning error
+#    unless $NoRetry is set.
 #
 # CALLING SYNTAX:
-#    $result = &GetUrl($Url, $Resp);
+#    $result = &GetUrl($Url, $Resp, $NoRetry);
 #
 # ARGUMENTS:
 #    $Url            Endpoint URL.
 #    $Resp           Pointer to response array.
+#    $NoRetry        No error retry if set.
 #
 # RETURNED VALUES:
 #    0 = Success,  1 = Error, 2 =  Palette not found
@@ -735,7 +766,7 @@ sub PostUrl {
 #    None
 # =============================================================================
 sub GetUrl {
-   my($Url, $Resp) = @_;
+   my($Url, $Resp, $NoRetry) = @_;
    my($request, $response, @data);
    my($agent) = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, " .
                 "like Gecko) Chrome/89.0.4389.114 Safari/537.36";
@@ -743,7 +774,7 @@ sub GetUrl {
    &DisplayDebug("GetUrl URL: $Url");
    
    my $userAgent = LWP::UserAgent->new(
-      timeout => 10, agent => $agent, protocols_allowed => ['http',]);
+      timeout => 1, agent => $agent, protocols_allowed => ['http',]);
    while ($retry > 0) {
       $response = $userAgent->get($Url,
          Content_Type => 'application/json'
@@ -782,7 +813,7 @@ sub GetUrl {
          else {  
             $retry--;
             print "\n" if ($retry == 2);
-            if ($retry == 0) { 
+            if ($retry == 0 or $NoRetry ne '') { 
                &ColorMessage("GetUrl - Can't connect to WLED $Url", "BRIGHT_RED", '');
                # &ColorMessage("HTTP GET error code: " . $response->code, "BRIGHT_RED", '');
                # &ColorMessage("HTTP GET error message: " . $response->message .
@@ -863,7 +894,7 @@ sub ShowCmdHelp {
    my(@cmds) = ();
    
    if ($$Parsed{'args0'} eq '') {
-      @cmds = ('g','sh','so','i','a','r','de','du','ed','ex','q');
+      @cmds = ('g','sh','so','i','a','r','de','du','ed','ex','c','q');
    }
    else {
       @cmds = split(' ', $$Parsed{'args0'});
@@ -1024,11 +1055,26 @@ sub ShowCmdHelp {
          &ColorMessage("EDIT lid:2 pid:42 pname:'The Answer'", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^so[rt]*/) {
-         &ColorMessage("SORT lid | pid | date | pname | tag | group:a|d", "BRIGHT_WHITE", '');
+         &ColorMessage("SORT lid[:a|:d] | pid[:a|:d] | date[:a|:d] | pname[:a|:d] | tag[:a|:d] | group[:a|:d]", "BRIGHT_WHITE", '');
          &ColorMessage("Specifies the column and direction to order the SHOW command output. Ascending (low to", "WHITE", ''); 
-         &ColorMessage("high), Descending (high to low). The setting remains in effect until changed. Default", "WHITE", ''); 
-         &ColorMessage("column is Lid:a. e.g. ", "WHITE", 'nocr');
+         &ColorMessage("high), Descending (high to low). If direction is not specified, ascending is assumed. The", "WHITE", ''); 
+         &ColorMessage("setting remains in effect until changed. Default column is Lid:a. e.g. ", "WHITE", 'nocr');
          &ColorMessage("SORT date:d.", "BRIGHT_WHITE", '');
+      }
+      elsif ($cmd =~ m/^c[fg]*/) {
+         &ColorMessage("CFG wled:<ip> pop:<i> bri:<i> info[:c|:p]", "BRIGHT_WHITE", '');
+         &ColorMessage("Sets the default configuration value for power-on-preset (pop) and/or global brightness", "WHITE", ''); 
+         &ColorMessage("(bri) on the WIFI connected WLED instance. Include the wled: option if the WLED instance", "WHITE", ''); 
+         &ColorMessage("is not using address 4.3.2.1. These settings are not kept in the database. They are", "WHITE", ''); 
+         &ColorMessage("stored on the WLED instance and used by WLED during startup. The pop: specified preset is", "WHITE", '');
+         &ColorMessage("activated on the WLED instance for confirmation when set. If no options are specified", "WHITE", '');
+         &ColorMessage("the WLED instance is read and the current values for these parameters are displayed.\n", "WHITE", '');
+         &ColorMessage("The info: option displays the current WLED configuration and preset data that is present", "WHITE", '');
+         &ColorMessage("on the WLED instance. Use :c or :p to limit the output; unspecified displays both. The", "WHITE", '');
+         &ColorMessage("configuration JSON is complete with the pop: and bri: settings shown in the 'def' section.", "WHITE", '');
+         &ColorMessage("The preset data in this output is abreviated. See database (pdata) for full JSON.", "WHITE", '');
+         &ColorMessage("e.g. ", "WHITE", 'nocr');
+         &ColorMessage("CFG pop:3   CFG info", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^q[uit]*/) {
          &ColorMessage("QUIT", "BRIGHT_WHITE", '');
@@ -1083,6 +1129,7 @@ sub DisplayHeadline {
    &ColorMessage("   edit lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [src:<w>]", "WHITE", '');
    &ColorMessage("   import [file:<file>] [wled:[<ip>]] [tag:<w>] [group:<w>]", "WHITE", '');
    &ColorMessage("   sort [lid|pid|date|pname|tag|group]:[a|d]", "WHITE", '');
+   &ColorMessage("   cfg [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|p]", "WHITE", '');
    &ColorMessage("   help [add|change|delete|edit|export|general|import|quit|remove|show]", "WHITE", '');
    &ColorMessage("   quit", "WHITE", '');
    &ColorMessage("$line", "WHITE", '');
@@ -1582,7 +1629,7 @@ sub ParseInput {
       'show' => 'tag,group,date,pid,pname,type,lid,pdata,qll,src,pal,map,,wled', 
       'delete' => 'lid,pid,tag,group', 'dupl' => 'lid,pid,pname,qll,tag,group',
       'edit' => 'lid,pid,pname,qll,src', 'sort' => 'tag,group,date,pid,pname,lid',
-      'dump' => 'tbl');
+      'dump' => 'tbl', 'cfg' => 'wled,pop,bri,info');
    my(%validCmd2) = ('add' => 'tag,group', 'remove' => 'tag,group', 
                      'export' => 'file,wled');
    
@@ -1668,12 +1715,24 @@ sub ParseInput {
                   $$Parsed{"${opt}${x}"} =~ s/,,/,/g;
                }
             }
+            elsif ($opt eq 'pop' or $opt eq 'bri') {
+               # Only digits for pop/bri
+               if ($$Parsed{"args${x}"}  =~ m/$opt:([0-9]+)/i) {
+                  $$Parsed{"${opt}${x}"} = $1;
+               }
+            }
             elsif ($opt eq 'wled') {
                if ($$Parsed{"args${x}"}  =~ m/($opt:)([0-9\.]*)/i) {
                   $$Parsed{"${opt}${x}"} = "${1}${2}";
                } 
                elsif ($$Parsed{"args${x}"}  =~ m/($opt)/) {
                   $$Parsed{"${opt}${x}"} = join(':', $1, $main::WledIp);
+               } 
+            }
+            elsif ($opt eq 'info') {
+               $$Parsed{"${opt}${x}"} = $opt;  # Assume setting for both c and p.
+               if ($$Parsed{"args${x}"}  =~ m/($opt:)([c|p])/i) {
+                  $$Parsed{"${opt}${x}"} = "${1}${2}";
                } 
             }
             elsif ($opt eq 'pname') {
@@ -1737,6 +1796,9 @@ sub ParseInput {
    } 
    elsif ($$Parsed{'cmd0'} eq 'edit') {
       return &EditPresets($Dbh, $Parsed);
+   } 
+   elsif ($$Parsed{'cmd0'} eq 'cfg') {
+      return &DefCfg($Dbh, $Parsed);
    } 
    elsif ($$Parsed{'cmd0'} eq 'sort') {
       if (exists($$Parsed{'sortmp'})) {
@@ -1824,7 +1886,7 @@ sub LoadPalettes {
       elsif (exists($$Parsed{'wled0'})) {
          my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
          my $url = join("/", 'http:/', $ip, $file);
-         my $result = &GetUrl($url, \@data);
+         my $result = &GetUrl($url, \@data, '');
          if ($result == 0) {
             $data[0] =~ s/[\r\n]+//g;
             $data[0] =~ s/\s{2,}/ /g;
@@ -1884,7 +1946,7 @@ sub LoadLedmaps {
       elsif (exists($$Parsed{'wled0'})) {
          my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
          my $url = join("/", 'http:/', $ip, $file);
-         my $result = &GetUrl($url, \@data);
+         my $result = &GetUrl($url, \@data, '');
          if ($result == 0) {
             my $ledmap = join('', @data);
             $ledmap =~ s/[\r\n]+//g;
@@ -2106,7 +2168,7 @@ sub ImportPresets {
    }
    elsif (exists($$Parsed{'wled0'})) {    # Get the WLED presets into @data
       my $ip = $1 if ($$Parsed{'wled0'} =~ m/wled:(.+)/);
-      return 1 if (&GetUrl(join("/", 'http:/', $ip, 'presets.json'), \@data));
+      return 1 if (&GetUrl(join("/", 'http:/', $ip, 'presets.json'), \@data, ''));
       $srcFile = 'wifi';
    }
    else {
@@ -2412,14 +2474,14 @@ sub ExportPresets {
       return 1 if (&WriteFile($file, \@pdata, ''));
       my $ip = $1 if ($$Parsed{'wled1'} =~ m/wled:(.+)/);
       my $wledUrl = "http://$ip";
-      return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file));
+      return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file, ''));
       unlink $file;
       foreach my $name (sort keys(%palHash)) {
          my $file = join('/', $dirPath, $name);
          my @array = ("$palHash{$name}");
          return 1 if (&ValidateJson(\@array, '', '', '')); # Validate the JSON.
          return 1 if (&WriteFile($file, \@array, ''));
-         return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file));
+         return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file, ''));
          &ColorMessage("   Sent palette to WLED: $name","YELLOW", '');
          unlink $file;
       }
@@ -2428,7 +2490,7 @@ sub ExportPresets {
          my @array = ("$mapHash{$name}");
          return 1 if (&ValidateJson(\@array, '', '', '')); # Validate the JSON.
          return 1 if (&WriteFile($file, \@array, ''));
-         return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file));
+         return 1 if (&PostUrl(join('/', $wledUrl, 'upload'), $file, ''));
          &ColorMessage("   Sent ledmap to WLED: $name","YELLOW", '');
          unlink $file;
       }
@@ -2761,17 +2823,17 @@ sub ShowOnWled {
       my $json = $data[0];
       if ($json =~ m/"playlist":/) {   # Just playlist data pairs.
          $json = substr($json, index($json, '"playlist"'));
-         return 1 if(&PostJson($Url, '{"on":true}'));  # Leds on.
+         return 1 if(&PostJson($Url, '{"on":true}', ''));  # Leds on.
       }
       elsif ($json =~ m/"seg":/) {     # Just segment data pairs. 
          $json = substr($json, index($json, '"seg"'));
-         return 1 if(&PostJson($Url, '{"on":true}'));  # Leds on.
+         return 1 if(&PostJson($Url, '{"on":true}', ''));  # Leds on.
       }
       else {
          $json =~ s/^"\d+":\{//;       # Remove preset id container. 
          $json =~ s/\}$//;
       }
-      return 1 if(&PostJson($Url, "{$json}"));  # Send preset json.
+      return 1 if(&PostJson($Url, "{$json}", ''));  # Send preset json.
       return 0;
    }
 }
@@ -3192,6 +3254,207 @@ sub DuplPreset {
    else {
       &ColorMessage("   Required lid:<i> not specified.", 'YELLOW', '');
       return 1;
+   }
+   return 0;
+}
+
+# =============================================================================
+# FUNCTION:  ShowWledInfo
+#
+# DESCRIPTION:
+#    This routine is used to display the specified WLED configuration and 
+#    preset data. Data are passed in using separate arrays and either may
+#    be empty. Each is formatted for user readability and output.
+#
+# CALLING SYNTAX:
+#    $result = &ShowWledInfo($CfgData, $PresetData);
+#
+# ARGUMENTS:
+#    $CfgData       Pointer to an array of WLED cfg data.
+#    $PresetData    Pointer to an array of WLED preset data.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub ShowWledInfo {
+   my($CfgData, $PresetData) = @_;
+   my($value);
+
+   &DisplayDebug("ShowWledInfo CfgData: $#$CfgData   PresetData: $#$PresetData");
+   if ($#$CfgData >= 0) {
+      # Decode and display the json configuration data.
+      my $rawJson = join('', @$CfgData);
+      &DisplayDebug("ShowWledInfo rawJson: '$rawJson'\n");
+      my $jsonRef = JSON->new->decode($rawJson);
+      my @cfgKeys = sort keys( %{$jsonRef} );
+      &DisplayDebug("ShowWledInfo cfgKeys: '" . join(',', @cfgKeys) . "'\n");
+      # $Data::Dumper::Sortkeys = 1;
+      # print Dumper $jsonRef;
+
+      &ColorMessage("\n\nConfiguration data returned from WLED instance:", "WHITE", '');
+      foreach my $key (@cfgKeys) {
+         if (ref($jsonRef->{$key}) eq 'HASH' or ref($jsonRef->{$key}) eq 'ARRAY') {
+            $value = JSON->new->canonical->encode($jsonRef->{$key});
+         }
+         else {
+            $value = &CheckVarType('p', $key, $jsonRef->{$key});
+         }
+         &ColorMessage(qq("$key":), "BRIGHT_CYAN", 'nocr');
+         # No trailing comma on last entry.
+         $value = join('', $value, ',') if ($key ne $cfgKeys[-1]);
+         &ColorMessage("$value", "CYAN", '');
+      }
+   }
+   
+   if ($#$PresetData >= 0) {
+      # Decode and display the json preset data. For this output, the preset data
+      # is summarized. This code relies on the preset data formatting performed by
+      # the &FormatPreset routine. 
+      my $rawJson = join('', @$PresetData);
+      &DisplayDebug("ShowWledInfo rawJson: '$rawJson'\n");
+      my $jsonRef = JSON->new->decode($rawJson);
+      my @presetKeys = sort {$a <=> $b} keys( %{$jsonRef} );
+      &DisplayDebug("ShowWledInfo presetKeys: '" . join(',', @presetKeys) . "'\n");
+      # $Data::Dumper::Sortkeys = 1;
+      # print Dumper $jsonRef;
+
+      &ColorMessage('', "WHITE", '') if ($#$CfgData < 0);
+      &ColorMessage("\nPreset data summary returned from WLED instance:", "WHITE", '');
+      foreach my $key (@presetKeys) {
+         &ColorMessage('Pid: ', "CYAN", 'nocr');
+         my $keyStr = "$key   ";
+         $keyStr = substr($keyStr, 0, 4);
+         &ColorMessage($keyStr, "BRIGHT_CYAN", 'nocr');
+         my $line = join('', qq("n":{), &CheckVarType('p', $key, $jsonRef->{$key}{'n'}), "}");
+         $line = join('', $line, qq( "ql":{), &CheckVarType('p', $key, $jsonRef->{$key}{'ql'}), "}");
+         if (exists($jsonRef->{$key}{'ledmap'})) {
+            $line = join('', $line, " ledmap:", &CheckVarType('p', $key, $jsonRef->{$key}{'ledmap'})); 
+         }        
+         if (exists($jsonRef->{$key}{'playlist'})) {
+            $line = join('', $line, " playlist:{");
+            &ColorMessage("$line", "CYAN", '');
+            $value = JSON->new->canonical->encode($jsonRef->{$key}{'playlist'});
+            $value =~ s/,"end":.+?,/,/;
+            $value =~ s/,"r":.+?,/,/;
+            $value =~ s/,"repeat":.+?,/,/;
+            $value =~ s/^\{//;
+            &ColorMessage("         $value", "CYAN", '');
+         }
+         elsif (exists($jsonRef->{$key}{'seg'})) {
+            $line = join('', $line, " seg:{");
+            &ColorMessage("$line", "CYAN", '');
+            my @pdata = split("\n", &FormatPreset($jsonRef->{$key}, $key));
+            foreach my $rec (@pdata) {
+               if ($rec =~ m/("id":\d+?),/) {
+                  &ColorMessage("         $1,", "CYAN", 'nocr');
+               }
+               if ($rec =~ m/("col":.+?),"rev"/) {
+                  &ColorMessage("$1", "CYAN", '');
+               }
+            }
+         }
+         else {
+            &ColorMessage("$line", "CYAN", '');
+         }
+      }
+   }
+   &ColorMessage('', "WHITE", '') if ($#$CfgData >= 0 or $#$PresetData >= 0);
+   return 0;
+}
+
+# =============================================================================
+# FUNCTION:  DefCfg
+#
+# DESCRIPTION:
+#    This routine is used to set or displays certain WLED default configuration
+#    variables.  "def":{"on":true,"ps":0,"bri":128}
+#
+# CALLING SYNTAX:
+#    $result = &DefCfg($Dbh, $Parsed);
+#
+# ARGUMENTS:
+#    $Dbh          Database object reference.
+#    $Parsed       Pointer to parsed data hash.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub DefCfg {
+   my($Dbh, $Parsed) = @_;
+   my($ip) = '4.3.2.1';
+
+   if (exists($$Parsed{'wled0'})) {
+      $ip = $1 if ($$Parsed{'wled0'} =~ m/^wled:(.+)/);
+   } 
+   my $url = "http://$ip";
+
+   # Get and show current WLED cfg and presets.
+   if (exists($$Parsed{'info0'})) {
+      my $getFromWled = '';
+      my @cData = ();
+      my @pData = ();
+      $getFromWled = $1 if ($$Parsed{'info0'} =~ m/^info:([c|p])/);
+      if ($getFromWled eq '' or $getFromWled eq 'c') {
+         return 1 if (&GetUrl(join('/', $url, 'json/cfg'), \@cData, 'noretry'));
+         &DisplayDebug("DefCfg cData: " . join(',', @cData) . "\n");
+      }
+      if ($getFromWled eq '' or $getFromWled eq 'p') {
+         return 1 if (&GetUrl(join('/', $url, 'presets.json'), \@pData, 'noretry'));
+         &DisplayDebug("DefCfg pData: " . join(',', @pData) . "\n");
+      }
+      return &ShowWledInfo(\@cData, \@pData);
+   }
+   
+   unless (exists($$Parsed{'pop0'}) or exists($$Parsed{'bri0'})) {
+      # Read and show pop and bri configs.
+      my @data = ();
+      return 1 if (&GetUrl(join('/', $url, 'json/cfg'), \@data, 'noretry'));
+      # Decode the json data.
+      my $rawJson = join('', @data);
+      return 1 if (&ValidateJson('', \$rawJson, 'clean', ''));
+      my $jsonRef = JSON->new->decode($rawJson);
+      # $Data::Dumper::Sortkeys = 1;       
+      # print Dumper $jsonRef;
+      &ColorMessage("   WLED Power-On-Preset: " .
+         $jsonRef->{'def'}{'ps'} . "   Default brightness: " .
+         $jsonRef->{'def'}{'bri'}, 'YELLOW', '');
+   }
+   else {
+      my $powerOnPreset = '';
+      my $json = '"def":{"on":true';
+      if (exists($$Parsed{'pop0'})) {
+         if ($$Parsed{'pop0'} > 0 and $$Parsed{'pop0'} <= 250) {
+            $json = join(',', $json, qq("ps":$$Parsed{'pop0'}));
+            $powerOnPreset = $$Parsed{'pop0'};
+         }
+         else {
+            &ColorMessage("   Invalid preset value. Range 1-250.",'BRIGHT_RED','');
+            return 1;
+         }
+      }
+      if (exists($$Parsed{'bri0'})) {
+         if ($$Parsed{'bri0'} >= 0 and $$Parsed{'bri0'} <= 255) {
+            $json = join(',', $json, qq("bri":$$Parsed{'bri0'}));
+         }
+         else {
+            &ColorMessage("   Invalid brightness value. Range 0-255.",'BRIGHT_RED','');
+            return 1;
+         }
+      }
+      $json = join('', $json, '}');
+      &DisplayDebug("DefCfg json: '$json'");
+      return 1 if (&PostJsonjoin('/', $url, 'json/cfg'), "{$json}", 'noretry');  # Send json.
+      &ColorMessage("   WLED configuration setting successful.", 'YELLOW', '');
+      # Activate the preset for confirmation.
+      if ($powerOnPreset ne '') {
+         return 1 if (&PostJson(join('/', $url, 'json/state'), qq({"ps": $powerOnPreset})));
+      }
    }
    return 0;
 }
