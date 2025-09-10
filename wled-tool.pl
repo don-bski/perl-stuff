@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  8-15-2025
+# FILE: wled-tool.pl                                                  9-10-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -34,6 +34,10 @@
 #   and palettes into a single operation is provided; the -a and -A options.
 #   Each backup type can also be done individually using seperate options. 
 #
+#   This code has been tested as a standalone Windows executable using the
+#   Strawberry perl PAR::Packer module. Use the following command to build
+#   the windows executable.  pp -o wled-tools.exe wled-tools.pl
+#
 # PERL VERSION:  5.28.1
 # ==============================================================================
 use Getopt::Std;
@@ -41,7 +45,7 @@ use Term::ANSIColor;
 require Win32::Console::ANSI if ($^O =~ m/Win/i);
 use LWP::UserAgent;
 use JSON;
-use Data::Dumper;
+# use Data::Dumper;
 # use warnings;
 
 # ==============================================================================
@@ -99,15 +103,19 @@ GENERAL DESCRIPTION
    preset. This supports preset audition and testing when the WLED GUI is not
    available. The current presets are read from WLED and presented to the
    user for selection; green colored entries signify playlists. Input the
-   numeric value for the desired preset and press enter. A brightness value
-   1-255 can also be entered using the 'b<n>' entry. The b entry without a
-   value will display the current master brightness setting.
+   numeric value for the desired preset and press enter. 
      
    The -i option also supports entry of a custom playlist. Enter a comma
    separated list: p,<n>,<n>,d,<s>  where p is followed by one or more
    preset numbers and optional d is followed by a time duration in seconds
    between 0 and 3600. Duration defaults to 15 seconds if not specified. The
    p entry with no values will display the current active preset.
+   
+   The -i option provides a some additional entry options. A non-persistent
+   brightness change can be set using 'b <n>'; <n> 1-255. The b entry without
+   a value displays the current brightness setting. Likewise, WLED default
+   brightness (db) or power-on-preset (dp) can be viewed or changed. db <n>
+   and dp <n> alter the current WLED configuration settings. 
 
    The -f option is used to reformat a preset file for easier use in a text 
    editor. Extraneous whitespace is removed, newlines are added, and JSON
@@ -887,8 +895,9 @@ sub AuditionPresets {
    }
    &ColorMessage("", "CYAN", '') if ($col != 0);
    &ColorMessage("For a custom playlist enter: p,<n>,<n>,d,<s>", "WHITE", '');
-   &ColorMessage("LED Brightness: b <n> (1-255) or b +<n> or b -<n>       " .
-                 "Current: $s_ref->{'bri'}", "WHITE", '');
+   &ColorMessage("Default brightness: db <n> (1-255)", "WHITE", '');
+   &ColorMessage("Power-on-preset: dp <n> (1-250)", "WHITE", '');
+   &ColorMessage("LED brightness: b <n> (1-255) or b +<n> or b -<n>", "WHITE", '');
    &ColorMessage("$line", "WHITE", '');
 
    # Get user input and process.
@@ -897,6 +906,7 @@ sub AuditionPresets {
       my $preset = <STDIN>;
       chomp($preset);
       next if ($preset eq '');
+      last if ($preset =~ m/^q/i or $preset =~ m/^e/i);    # Accept quit or exit.
 
       # ==========
       if ($preset =~ m/^p/i) {           # User wants a custom playlist.
@@ -950,6 +960,9 @@ sub AuditionPresets {
       }
       # ==========
       elsif ($preset =~ m/^b$/i) {           # b with no value
+         # Re-get WLED state data which includes the current brightness setting.
+         return 1 if (&GetUrl(join("/", $WledUrl, 'json', 'state'), \@resp));
+         $s_ref = decode_json(join('', @resp));
          &ColorMessage("LED brightness is: $s_ref->{'bri'}", "CYAN", '');
       }
       elsif ($preset =~ m/^b\s*([\+|\-]*[0-9]+)/i) {   # User wants brightness change.
@@ -974,6 +987,46 @@ sub AuditionPresets {
             last if (&PostJson(join("/", $WledUrl, "json/state"), 
                      qq({"on":true,"bri": $s_ref->{'bri'}})));
             &ColorMessage("LED brightness set to: $s_ref->{'bri'}", "CYAN", '');
+         }
+      }
+      # ==========
+      elsif ($preset =~ m/^db$/i) {            # db with no value
+         # Get the WLED configuration data.
+         return 1 if (&GetUrl(join("/", $WledUrl, 'cfg.json'), \@resp));
+         my $c_ref = decode_json(join('', @resp));
+         &ColorMessage("Default LED brightness is: $c_ref->{'def'}{'bri'}", "CYAN", '');
+      }
+      elsif ($preset =~ m/^db\s*([0-9]+)/i) {  # User wants default brightness change.
+         my $val = $1;
+      
+         # Update parameter value in configuration working hash and send to WLED.
+         if ($val > 0 and $val < 256) {
+            last if (&PostJson(join("/", $WledUrl, "json/cfg"), 
+               qq({"def":{"on":true,"bri":$val}})));
+            &ColorMessage("Set default LED brightness to: $val", "CYAN", '');
+         }
+         else {
+            &ColorMessage("Invalid default brightness value: $val", "BRIGHT_RED", '');
+         }
+      }
+      # ==========
+      elsif ($preset =~ m/^dp$/i) {            # dp with no value
+         # Get the WLED configuration data.
+         return 1 if (&GetUrl(join("/", $WledUrl, 'cfg.json'), \@resp));
+         my $c_ref = decode_json(join('', @resp));
+         &ColorMessage("Power-on-preset is: $c_ref->{'def'}{'ps'}", "CYAN", '');
+      }
+      elsif ($preset =~ m/^dp\s*([0-9]+)/i) {  # User wants power-on-preset change.
+         my $val = $1;
+      
+         # Update parameter value in configuration working hash and send to WLED.
+         if ($val > 0 and $val < 251) {
+            last if (&PostJson(join("/", $WledUrl, "json/cfg"), 
+               qq({"def":{"on":true,"ps":$val}})));
+            &ColorMessage("Set power-on-preset to: $val", "CYAN", '');
+         }
+         else {
+            &ColorMessage("Invalid power-on-preset value: $val", "BRIGHT_RED", '');
          }
       }
       # ==========
