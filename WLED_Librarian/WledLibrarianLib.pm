@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           9-04-2025
+# FILE: WledLibrarianLib.pm                                           9-12-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -3457,7 +3457,7 @@ sub DefCfg {
       }
       $json = join('', $json, '}');
       &DisplayDebug("DefCfg json: '$json'");
-      return 1 if (&PostJsonjoin('/', $url, 'json/cfg'), "{$json}", 'noretry');  # Send json.
+      return 1 if (&PostJson(join('/', $url, 'json/cfg'), "{$json}", 'noretry'));  # Send json.
       &ColorMessage("   WLED configuration setting successful.", 'YELLOW', '');
       # Activate the preset for confirmation.
       if ($powerOnPreset ne '') {
