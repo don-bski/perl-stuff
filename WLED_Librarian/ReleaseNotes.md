@@ -1,3 +1,5 @@
+**9-12-2025** - WledLibrarian v0.71 fixes a bug related to display of the configuration file json data.
+
 **9-04-2025** - WledLibrarian v0.7 includes a new command; CFG. This command is used to set the default
 WLED power-on-preset and LED brightness. A WIFI connected WLED instance is required for this command 
 since these settings are persisted by the WLED instance's configuration. This command includes an option
