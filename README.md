@@ -14,9 +14,10 @@ Place the code in a convenient location on your system and use **perl pgm.pl** a
 ### OS: Linux and Windows
 **env.pl** - Displays the %ENV hash environment variables/values that were inherited from the operating system as part of perl program start.<br/>
 **bin2hex.pl** - Dumps the specified file contents to the console. Hex and its ASCII equivalent characters are displayed.<br/><br/>
-**wled-tool.pl** - This program is used to send and receive data with WLED using its json api interface. Available functions include backup and restore of WLED user settings (configuration, presets, custom palettes, custom ledmaps), an interactive preset audition function, and a preset data reformatter. The reformat function rearranges and selectively indents the preset data to simplify text editing of a preset backup file. The desired function is specified using one of the program's CLI options. This tool is useful in cases where the WLED GUI is not available.<br/><br/>
+**wled-tool.pl** - This program is used to send and receive data with WLED using its json api interface. Available functions include backup and restore of WLED user settings (configuration, presets, custom palettes, custom ledmaps), an interactive preset audition function, and a data reformatter. The reformat function rearranges and selectively indents preset and configuration JSON data to simplify text editing. The desired wled-tool function is specified using one of the program's CLI options. This tool is useful in cases where the WLED GUI is not available.<br/><br/>
 **wled-tool-v1.3.zip** - wled-tool standalone Windows executable, built with strawberry perl PAR::Packer.<br/>wled-tool.exe `SHA256: C195A5B2CED324374810C3D93C655ECF7DA4DFB380785F1A9D807AE17BD8ADB2`<br/><br/>
 <img src="wled-screencap.png" alt="screenshot" width="500"/><br/>
+
 
 
 
