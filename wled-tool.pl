@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  9-10-2025
+# FILE: wled-tool.pl                                                  9-13-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -45,6 +45,7 @@ use Term::ANSIColor;
 require Win32::Console::ANSI if ($^O =~ m/Win/i);
 use LWP::UserAgent;
 use JSON;
+use File::Copy;
 # use Data::Dumper;
 # use warnings;
 
@@ -117,11 +118,13 @@ GENERAL DESCRIPTION
    brightness (db) or power-on-preset (dp) can be viewed or changed. db <n>
    and dp <n> alter the current WLED configuration settings. 
 
-   The -f option is used to reformat a preset file for easier use in a text 
-   editor. Extraneous whitespace is removed, newlines are added, and JSON
-   data pairs are indented for better readability. The changes made are 
-   compatible with subsequent preset restore to WLED. The specified file is 
-   overwritten with the reformatted content.
+   The -f option is used to reformat a WLED configuration or preset file for
+   easier use in a text editor. Extraneous whitespace is removed, newlines are 
+   added, and some JSON data pairs are indented for better readability. The 
+   changes made are compatible with subsequent use by WLED. A backup copy of
+   the input file is created. It is then overwritten with the new reformatted 
+   content. If the -d option is also specified, the reformatted content is
+   only displayed on the console.
     
    The -x option is used to send json formatted data to WLED. See the WLED
    json-api webpage at https://kno.wled.ge/interfaces/json-api/ for details.
@@ -314,7 +317,7 @@ sub WriteFile {
 #    <path> = Success,  '' = Error.
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}
+#    None.
 # =============================================================================
 sub GetTmpDir {
    my($path, $os) = ('','');
@@ -338,7 +341,7 @@ sub GetTmpDir {
    }
    chomp($path);
    $path =~ s/^\s+|\s+$//g;
-   print "GetTmpDir: os: $os   path: '$path'\n" if (exists( $main::cliOpts{d} ));
+   &DisplayDebug("GetTmpDir: os: $os   path: '$path'");
    unless (-d $path) {
       &ColorMessage("   Can't get temp directory: $path", "BRIGHT_RED", '');
       return '';
@@ -406,17 +409,48 @@ sub ColorMessage {
 }
 
 # =============================================================================
-# FUNCTION:  CleanData
+# FUNCTION:  DisplayDebug
 #
 # DESCRIPTION:
-#    This routine removes multiple spaces from the specified array. The 
-#    resulting data is validated using decode_json.
+#    Displays a debug message to the user. The message is colored for easier
+#    identification on the console.
 #
 # CALLING SYNTAX:
-#    $result = &CleanData(\@Array);
+#    $result = &DisplayDebug($Message);
+#
+# ARGUMENTS:
+#    $Message              Message to be output.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    $cliOpts{d}
+# =============================================================================
+sub DisplayDebug {
+   my($Message) = @_;
+   
+   &ColorMessage($Message, 'BRIGHT_CYAN', '') if (defined( $cliOpts{d} ));
+   return 0;
+}
+
+# =============================================================================
+# FUNCTION:  ValidateJson
+#
+# DESCRIPTION:
+#    This routine optionally removes multiple spaces from the specified array
+#    or string. Only one of Array or String should be specified. The resulting
+#    data is validated using decode_json. The cleaned array or string replaces
+#    the input if clean is specified.
+#
+# CALLING SYNTAX:
+#    $result = &ValidateJson(\@Array, \$String, $Clean, $Quiet);
 #
 # ARGUMENTS:
 #    $Array          Pointer to array of json records.
+#    $String         Pointer to string of json data.
+#    $Clean          Milti-space removal if set.
+#    $Quiet          No error message. Just return error.
 #
 # RETURNED VALUES:
 #    0 = Success,  1 = Error.
@@ -424,124 +458,338 @@ sub ColorMessage {
 # ACCESSED GLOBAL VARIABLES:
 #    None
 # =============================================================================
-sub CleanData {
-   my($ArrayPointer) = @_;
+sub ValidateJson {
+   my($ArrayPointer, $StringPointer, $Clean, $Quiet) = @_;
+   my (@array, $check);
 
-   my @array = @$ArrayPointer;              # Local working copy
-   s/\x20{2,}//g foreach @array;            # Remove multiple spaces   
-   my $check = join('', @array);
-   eval { decode_json($check) };            # Validate json data formatting.
-   if ($@) {
-      &ColorMessage("CleanData - Invalid json.", "BRIGHT_RED", '');
-      &ColorMessage("CleanData - $@", "CYAN", '');
-      &ColorMessage("CleanData - '$check'", "WHITE", '');
-      return 1;
+   if ($ArrayPointer ne '') {
+      @array = @$ArrayPointer;                         # Local working copy
+      if ($Clean ne '') {
+         s/\x20{2,}//g foreach @array;              # Remove multiple spaces  
+      } 
+      $check = join('', @array);
+      return 1 if (&chkJson(\$check));
+      @$ArrayPointer = @array if ($Clean ne '');    # Replace with cleaned data.
+   }
+   elsif ($StringPointer ne '') {
+      $check = $$StringPointer;
+      $check =~ s/\x20{2,}//g if ($Clean ne '');       # Remove multiple spaces
+      return 1 if (&chkJson(\$check));
+      $StringPointer = $check if ($Clean ne '');    # Replace with cleaned data.
    }
    else {
-      @$ArrayPointer = @array;              # Replace with cleaned data.
+      &ColorMessage("ValidateJson - No json specified.", "BRIGHT_RED", '');
+      return 1;
    }
    return 0;
+
+   # ----------
+   # This private sub performs the json validation.   
+   sub chkJson {
+      my($Pntr) = @_;
+      eval { JSON->new->decode($$Pntr) };      # Validate json data formatting.
+      if ($@) {
+         unless ($Quiet) {
+            &ColorMessage("ValidateJson - Invalid json.", "BRIGHT_RED", '');
+            &ColorMessage("ValidateJson - $@", "CYAN", '');
+         }
+         return 1;
+      }
+      return 0;
+   }
 }
 
 # =============================================================================
-# FUNCTION:  FormatPresets
+# FUNCTION:  FormatPreset
 #
 # DESCRIPTION:
 #    This routine reformats the specified WLED JSON preset data for readability
-#    and use in a text editor. The input data pointer can specify an array or
-#    a hash. If an array pointer, input is decoded to a local working hash.
+#    and use in a text editor. The serialized output is returned to the caller. 
 #
-#    The processed output is returned in the specified array. Each array record
-#    is a line containing the JSON data pairs as defined by the @order array.
+#    The keys for each level of the preset data structure are read and stored
+#    in a working hash. As the individual keys are processed, using the ordering
+#    arrays, the key in the working hash is marked 'done'. Once the processing
+#    of known keys is complete for the level, any not 'done' working hash keys
+#    are processed. This helps to minimize future code changes when new preset 
+#    keys are added.
 #
 # CALLING SYNTAX:
-#    $result = &FormatPresets($Presets);
+#    $result = &FormatPreset(\%Preset, $Pid);
 #
 # ARGUMENTS:
-#    $Presets        Pointer to preset data.
+#    $Preset        Pointer to decoded_json data hash.
+#    $Pid           Pid being processed.
 #
 # RETURNED VALUES:
-#    0 = Success,  1 = Error.
+#    <str> = Serialized data string,  '' = Error.
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}
+#    None
 # =============================================================================
-sub FormatPresets {
-   my($Presets) = @_;
-   my($tab) = ' ' x 3;   
-
-   # Clean and validate the input JSON preset data.
-   return 1 if (&CleanData($Presets));
-
-   # Concatenate data to a single line. Add marker characters and then split.
-   my($data) = join('', @$Presets);
-   $data =~ s/("\d+":)/%$1/g;              # Split point for preset id.
-   $data =~ s/(\{"id":\d+,)/%$1/g;         # Split point for segment id.
-   $data =~ s/("col":)/%$1/g;              # Split point for col.
-   $data =~ s/("c1":)/%$1/g;               # Split point for c1.
-   $data =~ s/("ps":\[)/%$1/g;             # Split point for playlist ps.
-   $data =~ s/("dur":\[)/%$1/g;            # Split point for playlist dur.
-   $data =~ s/("transition":\[)/%$1/g;     # Split point for playlist transition.
-   $data =~ s/(\{"stop":0\})/%$1/g;        # Split point for every {"stop":0}.
-   $data =~ s/(\{"stop":0\}\],)/$1%/g;     # Split point for segment end.
-   my @work = split('%', $data);           # Make it so.
-   if ($work[0] eq '{') {
-      splice (@work, 0, 1);                # Remove standalone open brace.
-      $work[0] = join('', '{', $work[0]);  # Add it to the next record.
-   }
-   @$Presets = ();          # Clear preset array for results.
+sub FormatPreset {
+   my($JsonRef, $Pid) = @_;
+   my($tab) = ' ' x 3;
+   my(@order);
+   my($segCount) = 32;                  # Segment down counter.
+   my($spData) = '"' . $Pid . '":{';    # Start serealized preset data.
    
-   # Add readability indenting. Combine {"stop":0} data into 10 per line.
-   for (my $x = 0; $x <= $#work; $x++) {
-      if ($work[$x] =~ m/^\{"id":/ or $work[$x] =~ m/^"n":/ or $work[$x] =~ m/^"ps":/ or 
-          $work[$x] =~ m/^"dur":/ or $work[$x] =~ m/^"transition":/) {
-         $work[$x] = join('', $tab, $work[$x]);
-      }
-      elsif ($work[$x] =~ m/^"col":/ or $work[$x] =~ m/^"c1":/) {
-         $work[$x] = join('', $tab, $tab, $work[$x]);
-      }
-      elsif ($work[$x] =~ m/^\{"stop":0\}/) {
-         my $stops = '';   my @temp = ();   my($stopCnt) = 0;
-         for (my $y = $x; $y <= $#work; $y++) {
-            if ($work[$y] =~ m/^\{"stop":0\},$/) {  # only stop?
-               if ($stopCnt == 10) {
-                  push(@$Presets, $stops);
-                  $stops = '';
-                  $stopCnt = 0;
+   # -------------------------------------------------
+   if (exists($$JsonRef{'playlist'})) {
+      # Get all of the playlist level 1 keys that are present in the input hash.
+      # Used this to process unknown key:value pairs (not in @order). Also used
+      # to indicate we've processed the key:value pair; set to 'done'. 
+      my(%done1) = ();
+      $done1{$_} = '' foreach (keys( %{$JsonRef} ));  # Initialize working hash.
+      @order = ('on','n','ql','playlist');            # Key process order.
+      
+      # Process playlist data level 1. Last key checked must be 'playlist'. Then
+      # add any unknown keys at this level.
+      foreach my $key (@order) {   
+         if (exists($$JsonRef{$key})) {
+            if ($key eq 'playlist') {
+               $done1{$key} = 'done';
+               foreach my $udn (keys(%done1)) {          # Check/process undone keys.
+                  next if ($done1{$udn} ne '');
+                  my $value = &CheckVarType('p', $udn, $$JsonRef{$udn});
+                  $spData .= join('', '"', $udn, '":', $value, ',');
+                  $done1{$udn} = 'done';
                }
-               if ($stopCnt == 0) {
-                  $stops = join('', $tab, $work[$y]);
-                  $stopCnt = 1;
-               }
-               else {
-                  $stops = join('', $stops, $work[$y]);
-                  $stopCnt++;
-               }
+               $spData .= join('', '"', $key, '":{');
+               last;
             }
             else {
-               # Add last stop; it has the segment end ].
-               if ($stopCnt == 10) {
-                  push(@$Presets, $stops);
-                  $stops = join('', $tab, $work[$y]);
-               }
-               else {
-                  $stops = join('', $stops, $work[$y]);
-               }
-               push(@$Presets, $stops);
-               $x = $y;     # Point $x to the next preset line.
-               last;        # Break out of inner $y loop.
+               my $value = &CheckVarType('p', $key, $$JsonRef{$key});
+               $spData .= join('', '"', $key, '":', $value, ',');
+               $done1{$key} = 'done';
             }
          }
-         next;    # Nothing to output. Continue with next $x. 
+         else {
+            $done1{$key} = 'ignore';
+         }
       }
-      push(@$Presets, $work[$x]);
+      # Process playlist data level 2.
+      $playref = $$JsonRef{'playlist'};                    # playlist array reference
+      %done2 = ();
+      $done2{$_} = '' foreach (keys( %{$playref} ));       # Initialize working hash.
+      @order = ('ps','dur','transition','r','repeat','end'); 
+      foreach my $key (@order) {
+         if (exists($playref->{$key})) {
+            if (($key eq 'transition' or $key eq 'dur' or $key eq 'ps') and 
+                ref($playref->{$key}) eq 'ARRAY') {
+               $spData .= join('', "\n$tab", '"', $key, '":[');
+               $spData .= join(',', @{$playref->{$key}});
+               $spData .= '],';
+               $done2{$key} = 'done';
+            }
+            else {
+               my $value = &CheckVarType('p', $key, $playref->{$key});
+               if ($key eq 'r') {
+                  $spData .= join('', "\n$tab", '"', $key, '":', $value, ',');
+               } 
+               else {
+                  $spData .= join('', '"', $key, '":', $value, ',');
+               }
+               $done2{$key} = 'done';
+            }
+         }
+         else {
+            $done2{$key} = 'ignore';
+         }
+      }
+      foreach my $key (keys(%done2)) {             # Check/process undone keys.
+         next if ($done2{$key} ne '');
+         my $value = &CheckVarType('p', $key, $playref->{$key});
+         $spData .= join('', '"', $key, '":', $value, ',');
+         $done2{$key} = 'done';
+      }
+      $spData =~ s/,$//;
+      # Playlist complete!
+      $spData .= "}" if (exists($$JsonRef{'playlist'}));  # close playlist
+      $spData .= "}";                                     # close json
    }
-   if (defined($main::cliOpts{d})) {
-      foreach my $line (@$Presets) {
-         print $line, "\n";
+   else {
+      # -------------------------------------------------
+      # Get all of the preset level 1 keys that are present in the input hash.
+      # Used to process unknown key:value pairs (not in @order1). Also used
+      # to indicate we've processed the key:value pair; set to 'done'. 
+      my(%done1) = ();
+      $done1{$_} = '' foreach (keys( %{$JsonRef} ));  # Initialize working hash.
+      @order = ('on','n','ql','bri','transition','mainseg','ledmap','seg');   
+      
+      # Process preset data level 1. Last key checked must be 'seg'. Then add
+      # any unknown keys at this level.
+      foreach my $key (@order) {                      # 1st line keys
+         if (exists($$JsonRef{$key})) {
+            if ($key eq 'seg') {
+               $done1{$key} = 'done';
+               foreach my $udn (keys(%done1)) {       # Check/process undone keys.
+                  next if ($done1{$udn} ne '');
+                  my $value = &CheckVarType('p', $udn, $$JsonRef{$udn});
+                  $spData .= join('', '"', $udn, '":', $value, ',');
+                  $done1{$udn} = 'done';
+               }
+               $spData .= join('', '"', $key, '":[', "\n");
+               last;
+            }
+            else {
+               if (exists($$JsonRef{$key})) {
+                  my $value = &CheckVarType('p', $key, $$JsonRef{$key});
+                  $spData .= join('', '"', $key, '":', $value, ',');
+               }
+               $done1{$key} = 'done';
+            }
+         }
+         else {
+            $done1{$key} = 'ignore';
+         }
+      }
+      
+      # Process preset data level 2 if input has 'seg'.
+      if (exists($$JsonRef{'seg'})) {
+         foreach my $segref (@{ $$JsonRef{'seg'} }) {     # Process each segment.
+            %done2 = ();
+            $done2{$_} = '' foreach (keys(%{$segref}));   # Initialize working hash.
+            # Ignore segments with 'stop' and no 'id'. We'll add them later.  
+            next if (exists($done2{'stop'}) and not exists($done2{'id'}));
+            
+            $spData .= "$tab\{";
+            @order = ('id','start','stop','grp','spc','of','on','bri','frz');
+            foreach my $key (@order) {                    # 2nd line keys
+               if (exists($segref->{$key})) {
+                  my $value = &CheckVarType('p', $key, $segref->{$key});
+                  $spData .= join('', '"', $key, '":', $value, ',');
+                  $done2{$key} = 'done';
+               }
+               else {
+                  $done2{$key} = 'ignore';
+               }
+            }
+            $spData .= "\n$tab";
+            @order = ('col','fx','sx','ix','pal','rev','c1','c2','c3','sel');
+            foreach my $key (@order) {                     # 3rd line keys
+               if (exists($segref->{$key})) {
+                  if ($key eq 'col') {                     # col is array of arrays
+                     $spData .= join('', '"', $key, '":[');
+                     foreach my $colref (@{ $segref->{'col'} }) { # Each color group.
+                        $spData .= join('', "[", join(',', @{$colref}), "],");
+                     }
+                     $spData =~ s/,\n*\s*$//;
+                     $spData .= '],';
+                     $done2{$key} = 'done';
+                  }
+                  else {
+                     my $value = &CheckVarType('p', $key, $segref->{$key});
+                     $spData .= join('', '"', $key, '":', $value, ',');
+                     $done2{$key} = 'done';
+                  }
+               }
+               else {
+                  $done2{$key} = 'ignore';
+               }
+            }
+            $spData .= "\n$tab";
+            @order = ('set','n','o1','o2','o3','si','m12','mi','cct'); 
+            foreach my $key (@order) {                         # 4th line keys
+               if (exists($segref->{$key})) {
+                  my $value = &CheckVarType('p', $key, $segref->{$key});
+                  $spData .= join('', '"', $key, '":', $value, ',');
+                  $done2{$key} = 'done';
+               }
+               else {
+                  $done2{$key} = 'ignore';
+               }               
+            }
+               
+            foreach my $key (keys(%done2)) {      # Check/process undone keys.
+               next if ($done2{$key} ne '');
+               my $value = &CheckVarType('p', $key, $segref->{$key});
+               $spData .= join('', '"', $key, '":', $value, ',');
+               # Don't mark these done so next segment gets them added too.
+            }
+            $spData =~ s/,\n*\s*$//;   # This segment is done!
+            $spData .= "},\n";
+            $segCount--;             # Decrement the segment down counter.
+         }
+         
+         # Add {"stop":0} for all remaining unused segments. Unsure why this
+         # is needed by WLED. Skip this step if no segments.
+         if (exists($$JsonRef{'seg'})) {
+            my $stopCnt = 10;        # Number of stops per line.
+            $spData .= $tab;         # Indent 1st line.
+            while ($segCount > 0) {
+               if ($stopCnt == 0) {
+                  $stopCnt = 9;
+                  $spData .= "\n$tab" . '{"stop":0},';
+               }
+               else {
+                  $spData .= '{"stop":0},';
+                  $stopCnt--;
+               }
+               $segCount--;
+            }
+         }
+         # All segments are done!
+         $spData =~ s/,\n*\s*$//;
+         $spData .= ']';      # close the segments array.
+      }
+      $spData =~ s/,\n*\s*$//;
+      $spData .= '}';         # close the preset definition.
+   }
+   # Make sure the formatted JSON is valid. We need to wrap the string with {}
+   # for the validity check.
+   my $check = join('', '{' ,$spData, '}');
+   return '' if (&ValidateJson('', \$check, '', ''));
+   return $spData;
+}
+   
+# =============================================================================
+# FUNCTION:  CheckVarType
+#
+# DESCRIPTION:
+#    This routine returns boolean values as 'true'/'false' and encloses strings
+#    in double quotes. Any undefined key is returned as a string.  
+#
+# CALLING SYNTAX:
+#    $var = &CheckVarType($Group, $Key, $Value);
+#
+# ARGUMENTS:
+#    $Group       'c' (config) or 'p' (preset).
+#    $Key         Key being processed.
+#    $Value       Value being processed.   
+#
+# RETURNED VALUES:
+#    Processed value.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub CheckVarType {
+   my($Group, $Key, $Value) = @_;
+   
+   if ($Group =~ m/p/i) {
+      my(%bool) = ('on'=>1,'rev'=>1,'frz'=>1,'r'=>1,'sel'=>1,'mi'=>1,'nl.on'=>1,
+         'rY'=>1,'mY'=>1,'tp'=>1,'send'=>1,'sgrp'=>1,'rgrp'=>1,'nn'=>1,'live'=>1);
+      my(%nmbr) = ('id'=>1,'start'=>1,'stop'=>1,'grp'=>1,'spc'=>1,'of'=>1,'bri'=>1,
+         'col'=>1,'fx'=>1,'sx'=>1,'ix'=>1,'pal'=>1,'c1'=>1,'c2'=>1,'c3'=>1,'set'=>1,
+         'o1'=>1,'o2'=>1,'o3'=>1,'si'=>1,'m12'=>1,'cct'=>1,'transition'=>1,'tt'=>1,
+         'tb'=>1,'ps'=>1,'psave'=>1,'pl'=>1,'pdel'=>1,'nl.dur'=>1,'nl.mode'=>1,
+         'nl.tbri'=>1,'lor'=>1,'rnd'=>1,'rpt'=>1,'mainseg'=>1,'startY'=>1,'stopY'=>1,
+         'rem'=>1,'recv'=>1,'w'=>1,'h'=>1,'lc'=>1,'rgbw'=>1,'wv'=>1, 'ledmap'=>1);
+      my(%str) = ('n'=>1,'ql'=>1,'ver'=>1,'vid'=>1,'cn'=>1,'release'=>1);
+      if (exists($bool{$Key})) {
+         return 'true' if ($Value > 0);
+         return 'false';
+      }
+      elsif (exists($nmbr{$Key})) {
+         return $Value;
+      }
+      else {
+         return join('', '"', $Value, '"');
       }
    }
-   return 0;
+   elsif ($Group =~ m/c/i) {
+   }
+   return $Value;
 }
 
 # =============================================================================
@@ -566,7 +814,7 @@ sub FormatPresets {
 #    0 = Success,  1 = Error
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}
+#    None.
 # =============================================================================
 sub PostJson {
    my($Url, $Json, $Resp) = @_;
@@ -575,16 +823,12 @@ sub PostJson {
                 "like Gecko) Chrome/89.0.4389.114 Safari/537.36";
    my($retry) = 3;
    my($exitCode) = 0;
-   print "PostJson: $Url   Json: '$Json'\n" if (exists( $main::cliOpts{d} ));
+   &DisplayDebug("PostJson: $Url   Json: '$Json'");
 
    my $userAgent = LWP::UserAgent->new(
       timeout => 5, agent => $agent, protocols_allowed => ['http',]);
    if ($Json ne '') {
-      eval { decode_json($Json) };             # Validate json data formatting.
-      if ($@) {
-         &ColorMessage("PostJson - Invalid json.", "BRIGHT_RED", '');
-         &ColorMessage("PostJson - $@", "CYAN", '');
-         &ColorMessage("PostJson - '$Json'", "WHITE", '');
+      if (&ValidateJson('', \$Json, '', '')) {
          $exitCode = 1;
       }
       else {
@@ -644,7 +888,7 @@ sub PostJson {
 #    0 = Success,  1 = Error
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}
+#    None.
 # =============================================================================
 sub PostUrl {
    my($Url, $File) = @_;
@@ -653,22 +897,17 @@ sub PostUrl {
                 "like Gecko) Chrome/89.0.4389.114 Safari/537.36";
    my($retry) = 3;
    my($exitCode) = 0;
-   print "PostUrl: $Url   File: '$File'\n" if (exists( $main::cliOpts{d} ));
+   &DisplayDebug("PostUrl: $Url   File: '$File'");
 
    my $userAgent = LWP::UserAgent->new(
       timeout => 10, agent => $agent, protocols_allowed => ['http',]);
    if (-e $File) {
       return 1 if (&ReadFile($File, \@data, 'trim'));
-      my $check = join('', @data);
-      eval { decode_json($check) };             # Validate json data formatting.
-      if ($@) {
-         &ColorMessage("PostUrl - Invalid json: $File", "BRIGHT_RED", '');
-         &ColorMessage("PostUrl - $@", "CYAN", '');
-#         &ColorMessage("PostUrl - '$check'", "WHITE", '');
+      if (&ValidateJson(\@data, '', '', '')) {
          $exitCode = 1;
       }
       else {
-         print "HTTP POST data: '@data'\n" if (exists( $main::cliOpts{d} ));
+         &DisplayDebug("HTTP POST data: '@data'");
          
          # If a palette, check syntax and color codes.
          if ($check =~ m/"palette":\[(.+)\]/s) {
@@ -744,7 +983,7 @@ sub PostUrl {
 #    0 = Success,  1 = Error, 2 = Palette not found.
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}, $main::cliOpts{r}
+#    $main::cliOpts{r}
 # =============================================================================
 sub GetUrl {
    my($Url, $Resp) = @_;
@@ -753,7 +992,7 @@ sub GetUrl {
                 "like Gecko) Chrome/89.0.4389.114 Safari/537.36";
    my($retry) = 3;
    my($exitCode) = 0;
-   print "GetUrl: $Url\n" if (exists( $main::cliOpts{d} ));
+   &DisplayDebug("GetUrl: $Url");
    
    my $userAgent = LWP::UserAgent->new(
       timeout => 10, agent => $agent, protocols_allowed => ['http',]);
@@ -768,10 +1007,7 @@ sub GetUrl {
       if ($response->is_success) {
          @data = $response->decoded_content;
          s/[^\x00-\x7f]/\./g foreach (@data);  # Replace 'wide' chars with .
-         my $check = join('', @data);
-         print "GetUrl: check: '$check'\n" if (exists( $main::cliOpts{d} ));
-         eval { decode_json($check) };     # Validate json data formatting.
-         if ($@) {
+         if (&ValidateJson(\@data, '', 'clean', '')) {
             &ColorMessage("GetUrl - Invalid json data. Retry Get ...", "CYAN", '');
             $retry--;
             if ($retry == 0) { 
@@ -847,7 +1083,7 @@ sub GetUrl {
 #    0 = Success,  1 = Error.
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}
+#    None.
 # =============================================================================
 sub AuditionPresets {
    my($WledUrl) = @_;
@@ -921,7 +1157,7 @@ sub AuditionPresets {
                $dur = $1 unless ($1 < 1 or $1 > 3600);
             }
          }
-         print "pset: '@pset'   dur: '$dur' \n" if (exists( $main::cliOpts{d} ));
+         &DisplayDebug("pset: '@pset'   dur: '$dur'");
          if ($#pset >= 0) {
             # Validate presets.
             my $valid = 1;
@@ -1078,11 +1314,14 @@ sub AuditionPresets {
 #    0 = Success,  1 = Error.
 #
 # ACCESSED GLOBAL VARIABLES:
-#    $main::cliOpts{d}
+#    None.
 # =============================================================================
 sub JsonData {
    my($Url, $File) = @_;
 
+   &ColorMessage("JsonData - unimplimented feature.", "BRIGHT_YELLOW", '');
+   return 0;
+   
    if (-e $File) {
    }
    else {
@@ -1115,17 +1354,8 @@ if (exists( $cliOpts{v} )) {
    if (-e $cliOpts{v}) {
       my @data = ();
       exit(1) if (&ReadFile($cliOpts{v}, \@data, 'trim'));
-      my $check = join('', @data);
-      eval { decode_json($check) };             # Validate json data formatting.
-      if ($@) {
-         &ColorMessage("Invalid json: $cliOpts{v}", "BRIGHT_RED", '');
-         &ColorMessage("$@", "CYAN", '');
-#         &ColorMessage("'$check'", "WHITE", '');
-         exit(1)
-      }
-      else {
-         &ColorMessage("Valid json content in: $cliOpts{v}", "WHITE", '');
-      }
+      exit(1) if (&ValidateJson(\@data, '', '', ''));
+      &ColorMessage("Valid json content in: $cliOpts{v}", "WHITE", '');
       exit(0);
    }
    else {
@@ -1135,38 +1365,61 @@ if (exists( $cliOpts{v} )) {
 }
 
 # ==========
-# Reformat the specified presets file. If debug -d option is also specified,
-# the reformatted data is only output to the console.
+# Reformat the specified configuration or presets file. If debug -d option is
+# is specified, the reformatted data is also output to the console.
 if (exists( $cliOpts{f} )) {
    if (-e $cliOpts{f}) {
-      my @presetData = ();
-      exit(1) if (&ReadFile($cliOpts{f}, \@presetData, 'trim'));
-      # Validate JSON.
-      my $check = join('', @presetData);
-      eval { decode_json($check) };             # Validate json data formatting.
-      if ($@) {
-         &ColorMessage("Invalid json: $cliOpts{f}", "BRIGHT_RED", '');
-         &ColorMessage("$@", "CYAN", '');
-#         &ColorMessage("'$check'", "WHITE", '');
-         exit(1)
+      my @inputData = ();
+      exit(1) if (&ReadFile($cliOpts{f}, \@inputData, 'trim'));
+      my $rawJson = join('', @inputData);
+      exit(1) if (&ValidateJson('', \$rawJson, 'clean', ''));
+      my $jsonRef = JSON->new->decode($rawJson);
+      # $Data::Dumper::Sortkeys = 1;
+      # print Dumper $jsonRef;
+      my @fileData = ();
+      if ($rawJson =~ m/wifi/i) {     # WLED cfg file?
+         my @cfgKeys = sort keys( %{$jsonRef} );
+#         &DisplayDebug("cfgKeys: '" . join(',', @cfgKeys) . "'");
+         foreach my $key (@cfgKeys) {
+            if (ref($jsonRef->{$key}) eq 'HASH' or ref($jsonRef->{$key}) eq 'ARRAY') {
+               $value = JSON->new->canonical->encode($jsonRef->{$key});
+            }
+            else {
+               # No ChkVarType cfg variables defined yet. Use p.
+               $value = &CheckVarType('p', $key, $jsonRef->{$key});
+            }
+            $value = "$value," if ($key ne $cfgKeys[-1]);
+            push (@fileData, join(':', qq("$key"), $value));
+         }
       }
-      # Reformat data.
-      exit(1) if (&FormatPresets(\@presetData));
-      # Validate reformatted JSON.
-      $check = join('', @presetData);
-      eval { decode_json($check) };             # Validate json data formatting.
-      if ($@) {
-         &ColorMessage("Reformatted json is invalid.", "BRIGHT_RED", '');
-         &ColorMessage("$@", "CYAN", '');
-         &ColorMessage("'$check'", "WHITE", '');
-         exit(1) unless (exists( $cliOpts{d} ));
+      else {                          # WLED preset file.
+         my @presetIds = sort {$a <=> $b} keys( %{$jsonRef} );
+#         &DisplayDebug("presetIds: '" . join(',', @presetIds) . "'");
+         foreach my $pid (@presetIds) {
+            my $formatted = &FormatPreset($jsonRef->{$pid}, $pid);
+            $formatted = "$formatted," if ($pid != $presetIds[-1]);
+            push (@fileData, split("\n", $formatted));
+         }
       }
-      if (exists( $cliOpts{d} )) {
-         print "\n";   # Print to console by -d in &FormatPresets
+      
+      # Add JSON container brackets to the data. If running in debug mode, send
+      # data only to console. 
+      unshift (@fileData, '{');
+      push (@fileData, '}');
+      if (exists($cliOpts{d})) {
+         foreach my $rec (@fileData) {
+            &ColorMessage("$rec", "WHITE", '');
+         }
       }
       else {
-         exit(1) if (&WriteFile($cliOpts{f}, \@presetData, 'trim'));
-         &ColorMessage("Preset file $cliOpts{f} successfully reformatted.", "WHITE", '');
+         # Save initial file content in backup.
+         my $backup = join('_', $cliOpts{f}, 'bak');
+         unless (copy ($cliOpts{f}, $backup)) {
+            &ColorMessage("Copy of $cliOpts{f} to $backup failed: $!", "BRIGHT_RED", '');
+            exit(1);
+         }
+         exit(1) if (&WriteFile($cliOpts{f}, \@fileData, 'trim'));
+         &ColorMessage("File $cliOpts{f} successfully reformatted.", "WHITE", '');
       }
    }
    else {
@@ -1216,7 +1469,7 @@ if (exists( $cliOpts{p} )) {
    my @resp = ();
    $cliOpts{p} = $Sections{'presets'} if ($cliOpts{p} eq '-');
    exit(1) if (&GetUrl(join("/", $WledUrl, "presets.json"), \@resp));
-   exit(1) if (&CleanData(\@resp));       # Remove extra whitespace.
+   exit(1) if (&ValidateJson(\@resp, '', 'clean','')); # Remove extra whitespace.
    exit(1) if (&WriteFile($cliOpts{p}, \@resp, 'trim'));
    &ColorMessage("Preset backup $cliOpts{p} successfully created.", "WHITE", '');
 }
@@ -1408,7 +1661,7 @@ if (exists( $cliOpts{m} )) {
          if ($code == 0) {
             my $pathFile = join('/', $cliOpts{m}, $pStr);
             exit(1) if (&WriteFile($pathFile, \@resp, 'trim'));
-            &ColorMessage("Palette backup: $pathFile", "WHITE", '');
+            &ColorMessage("Ledmap backup: $pathFile", "WHITE", '');
          }
       }
    }
