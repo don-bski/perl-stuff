@@ -23,7 +23,9 @@ Commands:
    edit lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [src:<w>]
    import [file:<file>] [wled:[<ip>]] [tag:<w>] [group:<w>]
    sort [lid|pid|date|pname|tag|group]:[a|d]
-   help [add|change|delete|edit|export|general|import|quit|remove|show]
+   cfg [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|p]
+   database [backup:<dstPath>/[<file>]] [restore:<srcPath>/[<file>]
+   help [<command>]
    quit
 
 =====================================================================================
@@ -81,6 +83,7 @@ usage rules.
    LftArrow  RgtArrow     Move curcor position in current CLI.
    Del  Backspace         Remove character in current CLI.
    Tab                    file: name search/entry, similar to OS. No ~ support.
+                          backup: and restore: also supported. 
    Home                   Display program headline command summary.
 ```
 All librarian commands and options are case insensitive. Options and their value(s)
@@ -222,10 +225,36 @@ configuration JSON is complete with the pop: and bri: settings shown in the 'def
 The preset data in this output is abreviated. See database (pdata) for full JSON.<br/>
 Examples: `CFG pop:3   CFG info`
 
+#### DATABASE command
+`DATABASE [backup:<dstPath>/[<file>]] [restore:<srcPath>/[<file>]`<br/>
+Used to backup or restore the current database. Normally, only a path to the desired
+archive directory is specified. The `backup:` option creates the backup file name by
+adding '_backup<nnn>' to the current database file name. <nnn> is the next available
+backup number in the <dstPath> specified destination directory. The current database
+file is copied to the destination directory using this name.
+
+For the `restore:` option, files named with '_backup<nnn>' in the <srcPath> specified
+source directory are displayed for interactive user selection. The desired file is
+selected by entering the corresponding row number. Following user confirmation, the
+file is copied and replaces the current librarian database file. The database file
+is then activated for immediate use.
+
+A full path/file can also be specified. This bypasses the name related functions and
+uses the path/file as specified.
+
+A single DATABASE command with both backup: and restore: options is supported; backup
+is performed first. The restore confirmation prompt is suppressed. Use carefully.
+
+Since the librarian database is a single file, backup and restore of the file can also
+be accomplished using an appropriate operating system command. The librarian must be
+stopped before the database file is restored.<br/>
+Example: `DATABASE backup:./`  - backup file created in librarian directory.<br/>
+Example: `DATABASE restore:./wled_librarian.dbs_backup001`  - specified file restored.
+
 #### HELP command
-`HELP [add | change | delete | edit | export | general | import | quit | remove | show]`<br/>
-Displays the full help text on the console. To limit the ouput to a specific area, add 
-one or two characters of the desired area.<br/>
+`HELP [<command>]`<br/>
+Displays the full help text on the console. To limit the ouput to a specific command,
+add one or two characters of the desired command.<br/>
 Example: `help ex`
 
 #### QUIT command

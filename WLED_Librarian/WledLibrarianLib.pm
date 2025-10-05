@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                           9-12-2025
+# FILE: WledLibrarianLib.pm                                          10-05-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -33,6 +33,7 @@ our @EXPORT = qw(
    WledReset
    ShowCmdHelp
    DisplayHeadline
+   PromptUser
    ProcessKeypadInput
    GetKeyboardInput
    ParseInput
@@ -48,12 +49,14 @@ our @EXPORT = qw(
    DeletePresets
    DuplPresets
    DefCfg
+   DbBackRestOper
 );
 
 use WledLibrarianDBI;
 use LWP::UserAgent;
 use Term::ReadKey;
 use DBI  qw(:utils);
+use File::Copy;
 use JSON;
 use Data::Dumper;
 # use warnings;
@@ -162,19 +165,20 @@ sub WriteFile {
 #    2007-06-13_08:15:41
 #
 # CALLING SYNTAX:
-#    $datetime = DateTime($DateJoin, $TimeJoin, $DatetimeJoin);
+#    $datetime = &DateTime($DateJoin, $TimeJoin, $DatetimeJoin, $Time);
 #
 # ARGUMENTS:
 #    $DateJoin         Character string to join date components 
-#    $TimeJoin		   Character string to join time components
-#    $DatetimeJoin	   Character string to join date and time components
+#    $TimeJoin		     Character string to join time components
+#    $DatetimeJoin	  Character string to join date and time components
+#    $Time             Optional; time to process. Otherwise, current time.
 #
 # ACCESSED GLOBAL VARIABLES:
 #    None.
 # =============================================================================
 sub DateTime {
-   my($DateJoin, $TimeJoin, $DatetimeJoin) = @_;
-   my($sec, $min, $hour, $day, $month, $year) = localtime;
+   my($DateJoin, $TimeJoin, $DatetimeJoin, $Time) = @_;
+   my($sec, $min, $hour, $day, $month, $year) = localtime($Time);
    my($date, $time);
 
    $month = $month+1;
@@ -366,9 +370,7 @@ sub FormatPreset {
          $done2{$key} = 'done';
       }
       $spData =~ s/,$//;
-      # Playlist complete!
-      $spData .= "}" if (exists($$JsonRef{'playlist'}));  # close playlist
-      $spData .= "}";                                     # close json
+      $spData .= "}}";       # Close playlist and json.
    }
    else {
       # -------------------------------------------------
@@ -552,6 +554,7 @@ sub CheckVarType {
       }
    }
    elsif ($Group =~ m/c/i) {
+      # No configuration key/value processing at this time.
    }
    return $Value;
 }
@@ -859,7 +862,7 @@ sub WledReset {
    &DisplayDebug("WledReset URL: $wledUrl");
    
    my $userAgent = LWP::UserAgent->new(
-      timeout => 10, agent => $agent, protocols_allowed => ['http',]);
+      timeout => 1, agent => $agent, protocols_allowed => ['http',]);
       
    $response = $userAgent->get($wledUrl,
       Content_Type => 'application/json'
@@ -894,7 +897,7 @@ sub ShowCmdHelp {
    my(@cmds) = ();
    
    if ($$Parsed{'args0'} eq '') {
-      @cmds = ('g','sh','so','i','a','r','de','du','ed','ex','c','q');
+      @cmds = ('g','sh','so','i','a','r','de','du','ed','ex','da','c','q');
    }
    else {
       @cmds = split(' ', $$Parsed{'args0'});
@@ -909,9 +912,9 @@ sub ShowCmdHelp {
          &ColorMessage("WLED presets file or directly to WLED over WIFI.\n", "WHITE", '');
          &ColorMessage("The database is contained in a single file (default: wled_librarian.dbs) that is", "WHITE", '');
          &ColorMessage("located in the librarian startup directory or optionally specified on the program", "WHITE", '');
-         &ColorMessage("start CLI (-f <file>). For database safeguard, periodically copy the file to a", "WHITE", '');
-         &ColorMessage("safe external location using an appropriate operating system command. To restore,", "WHITE", ''); 
-         &ColorMessage("copy the backup file to the working database file name.\n", "WHITE", '');
+         &ColorMessage("start CLI (-f <file>). For added safeguard, periodically use the DATABASE BACKUP", "WHITE", '');
+         &ColorMessage("command specifying an external folder location like a USB thumbdrive. To restore,", "WHITE", ''); 
+         &ColorMessage("use the DATABASE RESTORE command.\n", "WHITE", '');
          &ColorMessage("Some operations involve the SHOW command and second command on the same user input", "WHITE", '');
          &ColorMessage("line. SHOW and its filter options select the presets that will be affected by the", "WHITE", '');
          &ColorMessage("second command. Use the SHOW command alone until the desired records are displayed.", "WHITE", '');
@@ -940,6 +943,7 @@ sub ShowCmdHelp {
          &ColorMessage("   LftArrow  RgtArrow   Move curcor position in current CLI.", "WHITE", '');
          &ColorMessage("   Del  Backspace       Remove character in current CLI.", "WHITE", '');
          &ColorMessage("   Tab                  file: name search/entry, similar to OS. No ~ support.", "WHITE", '');
+         &ColorMessage("                        backup: and restore: also supported.", "WHITE", '');
          &ColorMessage("   Home                 Display program headline command summary.\n", "WHITE", '');
          &ColorMessage("All librarian commands and options are case insensitive. Options and their value(s)", "WHITE", '');
          &ColorMessage("must be colon joined. Commands are capitalized in this help text for clairity.", "WHITE", '');
@@ -957,6 +961,30 @@ sub ShowCmdHelp {
          &ColorMessage("command to filter for the desired preset(s). Then, recall the SHOW command and add", "WHITE", '');
          &ColorMessage("this command to the end. e.g. ", "WHITE", 'nocr');
          &ColorMessage("SHOW group:test REMOVE group:test,xmas", "BRIGHT_WHITE", '');
+      }
+      elsif ($cmd =~ m/^da[tabase]*/) {
+         &ColorMessage("DATABASE [backup:<dstPath>/[<file>]] [restore:<srcPath>/[<file>]", "BRIGHT_WHITE", '');
+         &ColorMessage("Used to backup or restore the current database. Normally, only a path to the desired", "WHITE", '');
+         &ColorMessage("archive directory is specified. The backup: option creates the backup file name by", "WHITE", '');
+         &ColorMessage("adding '_backup<nnn>' to the current database file name. <nnn> is the next available", "WHITE", '');
+         &ColorMessage("backup number in the <dstPath> specified destination directory. The current database", "WHITE", '');
+         &ColorMessage("file is copied to the destination directory using this name.\n", "WHITE", ''); 
+         &ColorMessage("For the restore: option, files named with '_backup<nnn>' in the <srcPath> specified", "WHITE", '');
+         &ColorMessage("source directory are displayed for interactive user selection. The desired file is", "WHITE", '');
+         &ColorMessage("selected by entering the corresponding row number. Following user confirmation, the", "WHITE", '');
+         &ColorMessage("file is copied and replaces the current librarian database file. The database file", "WHITE", ''); 
+         &ColorMessage("is then activated for immediate use.\n", "WHITE", '');         
+         &ColorMessage("A full path/file can also be specified. This bypasses the name related functions and", "WHITE", ''); 
+         &ColorMessage("uses the path/file as specified.\n", "WHITE", '');
+         &ColorMessage("A single DATABASE command with both backup: and restore: options is supported; backup", "WHITE", '');
+         &ColorMessage("is performed first. The restore confirmation prompt is suppressed. Use carefully.\n", "WHITE", '');
+         &ColorMessage("Since the librarian database is a single file, backup and restore of the file can also", "WHITE", '');
+         &ColorMessage("be accomplished using an appropriate operating system command. The librarian must be", "WHITE", '');
+         &ColorMessage("stopped before the database file is restored.", "WHITE", '');
+         &ColorMessage("DATABASE backup:./  ", "BRIGHT_WHITE", 'nocr');
+         &ColorMessage("- backup file created in librarian directory.", "WHITE", '');
+         &ColorMessage("DATABASE restore:./wled_librarian.dbs_backup001  ", "BRIGHT_WHITE", 'nocr');
+         &ColorMessage("- specified file restored.", "WHITE", '');
       }
       elsif ($cmd =~ m/^de[lete]*/) {
          &ColorMessage("DELETE [lid:<i>] [pid:<i>] [tag:<w>] [group:<w>] [pal:<i>]", "BRIGHT_WHITE", '');
@@ -1071,7 +1099,7 @@ sub ShowCmdHelp {
          &ColorMessage("the WLED instance is read and the current values for these parameters are displayed.\n", "WHITE", '');
          &ColorMessage("The info: option displays the current WLED configuration and preset data that is present", "WHITE", '');
          &ColorMessage("on the WLED instance. Use :c or :p to limit the output; unspecified displays both. The", "WHITE", '');
-         &ColorMessage("configuration JSON is complete with the pop: and bri: settings shown in the 'def' section.", "WHITE", '');
+         &ColorMessage("configuration 'def' section holds the power-on-preset (ps) and brightness (bri) values.", "WHITE", '');
          &ColorMessage("The preset data in this output is abreviated. See database (pdata) for full JSON.", "WHITE", '');
          &ColorMessage("e.g. ", "WHITE", 'nocr');
          &ColorMessage("CFG pop:3   CFG info", "BRIGHT_WHITE", '');
@@ -1130,7 +1158,8 @@ sub DisplayHeadline {
    &ColorMessage("   import [file:<file>] [wled:[<ip>]] [tag:<w>] [group:<w>]", "WHITE", '');
    &ColorMessage("   sort [lid|pid|date|pname|tag|group]:[a|d]", "WHITE", '');
    &ColorMessage("   cfg [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|p]", "WHITE", '');
-   &ColorMessage("   help [add|change|delete|edit|export|general|import|quit|remove|show]", "WHITE", '');
+   &ColorMessage("   database [backup:<dstPath>/[<file>]] [restore:<srcPath>/[<file>]", "WHITE", '');
+   &ColorMessage("   help [<command>]", "WHITE", '');
    &ColorMessage("   quit", "WHITE", '');
    &ColorMessage("$line", "WHITE", '');
    return 0;
@@ -1141,7 +1170,8 @@ sub DisplayHeadline {
 #
 # DESCRIPTION:
 #    This routine is used to prompt the user for input and return the response
-#    to the caller. Using a separate InWork hash each time, this input is not
+#    to the caller. It is used to get incidental user input such as a yes/no
+#    response. It uses a separate InWork hash for each call. This input is not
 #    recorded in the main input command history buffer. 
 #
 # CALLING SYNTAX:
@@ -1223,8 +1253,8 @@ sub ProcessKeypadInput {
       # These definitions are needed for the windows environment.
       '8' => \&backSpace, '279149126' => \&homeKey);
                   
-   # This hash defines cursor move and edit ANSI sequences. Not all are used
-   # For details, see https://en.wikipedia.org/wiki/ANSI_escape_code             
+   # This hash defines cursor move and edit ANSI sequences. For details, see
+   # https://en.wikipedia.org/wiki/ANSI_escape_code             
    my(%cursor) = ('left' => "\e[D", 'right' => "\e[C", 'up' => "\e[A", 
                   'down' => "\e[B", 'clrLeft' => "\e[1K", 'clrRight' => "\e[0K",
                   'clrLine' => "\e[2K", 'delLine' => "\e[2K\r", 'insLine' => "\e[L",
@@ -1233,6 +1263,8 @@ sub ProcessKeypadInput {
    # &DisplayDebug("ProcessKeypadInput: inseq: '$$InWork{'inseq'}'  ". 
    #               "iptr: $$InWork{'iptr'}   inbuf: '$$InWork{'inbuf'}'  ".
    #               "hptr: $$InWork{'hptr'}   history: @{ $$InWork{'history'} }");
+   
+   # Call handler for supported key sequences. 
    if (exists($keySub{ $$InWork{'inseq'} })) {
       return $keySub{ $$InWork{'inseq'} }->($InWork,\%cursor);  
    }
@@ -1345,9 +1377,12 @@ sub ProcessKeypadInput {
       my($InWork, $Cursor) = @_;
       my(@temp);
       
-      if ($$InWork{'inbuf'} =~ m/file:([a-zA-Z0-9_\.\-\/]*)(\s*.*)$/) {
-         my $spec = $1;
-         my $opts = $2;
+      if ($$InWork{'inbuf'} =~ m/(file):([a-zA-Z0-9_\.\-\/]*)(\s*.*)$/ or
+          $$InWork{'inbuf'} =~ m/(backup):([a-zA-Z0-9_\.\-\/]*)(\s*.*)$/ or
+          $$InWork{'inbuf'} =~ m/(restore):([a-zA-Z0-9_\.\-\/]*)(\s*.*)$/) {
+         my $optn = $1;
+         my $spec = $2;
+         my $opts = $3;
          my $newSpec;
          if ($spec eq '') {                       # Show all files.
             @temp = grep {(-f and -T) or -d} glob "*";   # Get file entries.
@@ -1357,7 +1392,7 @@ sub ProcessKeypadInput {
          else {                                   # Process partial filespec.
             # glob function needs trailing / for directories
             if (-d $spec and not $spec =~ m#/$#) {
-               $$InWork{'inbuf'} =~ s#file:$spec#file:$spec/#;
+               $$InWork{'inbuf'} =~ s#$optn:$spec#$optn:$spec/#;
                $$InWork{'iptr'}++;
                $spec = join('', $spec, '/');
                print '/';
@@ -1376,7 +1411,7 @@ sub ProcessKeypadInput {
                   return 0;
                }
             }
-            $$InWork{'inbuf'} =~ s/file:$spec/file:$newSpec/;
+            $$InWork{'inbuf'} =~ s/$optn:$spec/$optn:$newSpec/;
             $$InWork{'iptr'} = $$InWork{'iptr'} - length($spec) + length($newSpec);
             print join('', "\e[", length($spec), "D"), $$Cursor{'clrRight'}, $newSpec;
             if ($opts ne '') {
@@ -1418,9 +1453,8 @@ sub ProcessKeypadInput {
       my $width = int(72/$cols);
       my $pad = ' ' x $width;
       my $cnt = 0;
-      &ColorMessage('', "WHITE", '');
+      &ColorMessage("\n", "WHITE", '');
       foreach my $name (@$Fnames) {  # Show file names.
-         &ColorMessage('  ', "WHITE", '') if ($cnt == 0);
          $name = join('', $name, '/') if (-d $name);
          print substr(join('', $name, $pad), 0, $width);
          $cnt++;
@@ -1429,7 +1463,8 @@ sub ProcessKeypadInput {
             $cnt = 0;
          }
       }
-      &ColorMessage('', "WHITE", '') if ($cnt > 0);
+      &ColorMessage('', "WHITE", '') if ($cnt > 0);  # last partial data line
+      &ColorMessage('', "WHITE", '');
       &ColorMessage($$InWork{'prompt'}, $$InWork{'pcol'}, 'nocr');
       print $$InWork{'inbuf'};
       $$InWork{'iptr'} = length($$InWork{'inbuf'});
@@ -1467,7 +1502,7 @@ sub ProcessKeypadInput {
 #       'prompt' => '',    Optional: User input prompt string.
 #       'pcol' => '',      Optional: Color for prompt string. 
 #       ------             These keys are created at runtime.
-#       'pflag' => 0,      Prompt string output when set.
+#       'pflag' => 0,      Prompt string has been output when set.
 #       'inseq' => '',     Holder for keypad escape sequence. 
 #       'history' => [],   History array. Used with up/down arrow keys.
 #       'hptr' => 0        History position. Used with up/down arrow keys.
@@ -1550,7 +1585,7 @@ sub GetKeyboardInput {
             }
             # Point 1 beyond the new last history entry for upArrow.
             $$InWork{'hptr'} = scalar @{ $$InWork{'history'} };
-            # Point to end of inbuf in case tabKey was used. Also cursor.
+            # Point to end of inbuf in case of tabKey. Position cursor.
             $$InWork{'iptr'} = length($$InWork{'inbuf'});
             my $move = $$InWork{'iptr'} + length($$InWork{'prompt'});
             print "\e[1G", join('', "\e[", $move, "C");
@@ -1564,7 +1599,7 @@ sub GetKeyboardInput {
             return 1;        # Return input available to caller.
          }
          else {
-            if ($$InWork{'prompt'} =~ m#y/n#i) {
+            if ($$InWork{'prompt'} =~ m#y/n#i or $$InWork{'prompt'} =~ m/# ->/i) {
                $$InWork{'pflag'} = 0;   # Enable prompt output next call.
                return 1;        # Return input available to caller.
             }
@@ -1607,21 +1642,22 @@ sub GetKeyboardInput {
 #    )
 #
 # CALLING SYNTAX:
-#    $result = &ParseInput($Dbh, $Cmd, \%Parsed);
+#    $result = &ParseInput($Dbh, $Cmd, \%Parsed, $DbFile);
 #
 # ARGUMENTS:
 #    $Dbh           Pointer to database object.
 #    $Cmd           Command to be parsed.
 #    $Parsed        Pointer to hash for parsed output.
+#    $DbFile        Database file name.
 #
 # RETURNED VALUES:
-#    0 = Success,  1 = Error
+#    0 = Success,  1 = Error,  2 = New database file
 #
 # ACCESSED GLOBAL VARIABLES:
 #    $main::WledIp
 # =============================================================================
 sub ParseInput {
-   my($Dbh, $Cmd, $Parsed) = @_;
+   my($Dbh, $Cmd, $Parsed, $DbFile) = @_;
 
    # These hashes define the supported commands and the options that may be used.
    # First command position and second.
@@ -1629,7 +1665,7 @@ sub ParseInput {
       'show' => 'tag,group,date,pid,pname,type,lid,pdata,qll,src,pal,map,,wled', 
       'delete' => 'lid,pid,tag,group', 'dupl' => 'lid,pid,pname,qll,tag,group',
       'edit' => 'lid,pid,pname,qll,src', 'sort' => 'tag,group,date,pid,pname,lid',
-      'dump' => 'tbl', 'cfg' => 'wled,pop,bri,info');
+      'dump' => 'tbl', 'cfg' => 'wled,pop,bri,info', 'database' => 'backup,restore');
    my(%validCmd2) = ('add' => 'tag,group', 'remove' => 'tag,group', 
                      'export' => 'file,wled');
    
@@ -1694,7 +1730,7 @@ sub ParseInput {
             }
          }
          else {
-            if ($opt eq 'file') {
+            if ($opt eq 'file' or $opt eq 'backup' or $opt eq 'restore') {
                if ($$Parsed{"args${x}"} =~ m#$opt:(.+)#i) {
                   my $file = $1;
                   if ($file =~ m/(["|'].+?["|'])/) {  # "' enclosed "'
@@ -1799,6 +1835,10 @@ sub ParseInput {
    } 
    elsif ($$Parsed{'cmd0'} eq 'cfg') {
       return &DefCfg($Dbh, $Parsed);
+   } 
+   elsif ($$Parsed{'cmd0'} eq 'database') {
+      $$Parsed{'dbfile'} = $DbFile;
+      return &DbBackRestOper($Dbh, $Parsed);
    } 
    elsif ($$Parsed{'cmd0'} eq 'sort') {
       if (exists($$Parsed{'sortmp'})) {
@@ -2186,7 +2226,7 @@ sub ImportPresets {
 
    # Initialize working variables for Presets, Keywords, and Palettes DB insert.      
    my %dbData = ();                      # Working hash.
-   my $insertTime = &DateTime('-', ':', '_');
+   my $insertTime = &DateTime('-', ':', '_', '');
    my %newId = ();     # Old -> New preset id working hash.
    my %newPlist = ();  # Playlist update working hash. 
    my %lidSave = ();   # Playlist update save array for Lid.
@@ -3188,7 +3228,7 @@ sub DuplPreset {
             $repData{$dbCols[$x]} = "Dupl of lid $$Parsed{'lid0'}";
          }
          elsif ($dbCols[$x] eq 'Date') {
-            $repData{$dbCols[$x]} = &DateTime('-', ':', '_');
+            $repData{$dbCols[$x]} = &DateTime('-', ':', '_', '');
          }
          else {
             $key = join('', lc($dbCols[$x]), '0');
@@ -3462,6 +3502,159 @@ sub DefCfg {
       # Activate the preset for confirmation.
       if ($powerOnPreset ne '') {
          return 1 if (&PostJson(join('/', $url, 'json/state'), qq({"ps": $powerOnPreset})));
+      }
+   }
+   return 0;
+}
+
+# =============================================================================
+# FUNCTION:  DbBackRestOper
+#
+# DESCRIPTION:
+#    This routine is called to backup or restore the current database file
+#    which is essentially a file copy operation. Other display-only functions 
+#    are provided for partial input options.
+#
+#    Return 2 is used only by the DATABASE RESTORE command to signal a 
+#    database file change to the caller. The caller must either exit the
+#    librarian or reopen the database to get a new $Dbh reference. 
+#
+# CALLING SYNTAX:
+#    $result = &DbBackRestOper($Dbh, $Parsed);
+#
+# ARGUMENTS:
+#    $Dbh           Database handle.
+#    $Parsed        Pointer to parsed data hash.
+#
+# RETURNED VALUES:
+#    0 = Success,   1 = Error,   2 = New database file
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub DbBackRestOper {
+   my($Dbh, $Parsed) = @_;
+   my $dbFile = $$Parsed{'dbfile'};
+   my $dbName = substr($dbFile, rindex($dbFile,'/')+1);
+
+   unless (exists($$Parsed{'backup0'}) or exists($$Parsed{'restore0'})) {   
+      &ColorMessage("   No option specified.", "YELLOW", '');
+      return 0;
+   }
+   
+   if (exists($$Parsed{'backup0'})) {
+      my $backFile = $$Parsed{'backup0'};
+      &DisplayDebug("DbBackRestOper: backFile: '$backFile'");
+      if (-d $backFile) {   # Directory specified. Get existing backups for auto-name.
+         $backFile =~ s#/$##;
+         my $bCnt = 0;
+         my @backupFiles = glob("${backFile}/${dbName}_backup*");
+         if ($#backupFiles >= 0) {
+            $bCnt = $1 if ($backupFiles[-1] =~ m/backup(\d+)$/);  # Last backup number
+         }
+         $bCnt += 1;
+         $bCntStr = substr("00${bCnt}", -3);
+         $backFile = join('', $backFile, '/', $dbName, '_backup', $bCntStr);
+      }
+      unlink $backFile if (-e $backFile);
+      if ( copy ($dbFile, $backFile) ) {
+         &ColorMessage("   Database backup successful: $backFile", "YELLOW", '');
+      }
+      else {
+         &ColorMessage("   Database backup failed: $backFile - $!", "BRIGHT_RED", '');
+         return 1;
+      }
+   }
+   
+   if (exists($$Parsed{'restore0'})) {
+      my %availFiles = ();
+      my $restFile = $$Parsed{'restore0'};
+      &DisplayDebug("DbBackRestOper: restFile: '$restFile'");
+      if (-d $restFile) {   # Directory specified. Show existing backups.
+         $restFile =~ s#/$##;
+         my @restoreFiles = glob("${restFile}/${dbName}_backup*");
+         if ($#restoreFiles >= 0) {
+            my $cnt = 1;
+            &ColorMessage("\n\nAvailable database backup files in $restFile/\n", "WHITE", '');
+            foreach my $file (@restoreFiles) {
+               my $name = substr($file, rindex($file,'/')+1);
+               my $date = &DateTime('-', ':', '_', (stat ($file))[9]);
+               &ColorMessage("   $cnt: ", "BRIGHT_WHITE", 'nocr');
+               &ColorMessage("$name   $date", "WHITE", '');
+               $availFiles{$cnt} = $file;
+               $cnt += 1;
+            }
+         }
+         else {
+            &ColorMessage("\nNo backup files found.", "BRIGHT_YELLOW", '');
+            return 0;
+         }
+         &ColorMessage('', "WHITE", '');
+         my $prompt = "Enter row number to select. Any other to cancel. # -> ";
+         my $resp = &PromptUser($prompt, 'WHITE');
+         &ColorMessage('', "WHITE", '');
+         unless (exists($availFiles{$resp})) {
+            &ColorMessage("Database restore canceled.", "YELLOW", '');
+            return 0;
+         }
+         $restFile = join('/', $restFile, $availFiles{$resp});
+      }
+      
+      if (-e $restFile) {
+         # Validate the database file.
+         unless (open($fh, '<', $restFile)) {
+            &ColorMessage("\nError opening file: $restFile - $!", "BRIGHT_RED", '');
+            return 1;
+         }
+         my $data;
+         read $fh, $data, 256;
+         close($fh);
+         unless ($data =~ m/SQLite format 3/i) {
+            &ColorMessage("\nNot a database file: $restFile", "BRIGHT_YELLOW", '');
+            return 1;
+         }
+         my $checkDb = &InitDB($restFile, '');
+         if ($checkDb == -1) {
+            &ColorMessage("\nFile unuseable: $restFile", "BRIGHT YELLOW", '');
+            return 1;
+         }
+         $checkDb->disconnect;
+
+         # Skip confirmation prompt if both backup: and restore: options are specified.
+         unless (exists($$Parsed{'backup0'}) and exists($$Parsed{'restore0'})) {   
+            &ColorMessage("\nRestore database from $restFile", "BRIGHT_YELLOW", 'nocr');
+            my $resp = &PromptUser('? [y|N] -> ','BRIGHT_YELLOW');
+            &ColorMessage('', "WHITE", '');
+            unless ($resp =~ m/y/i) {
+               &ColorMessage("Database restore canceled.", "YELLOW", '');
+               return 0;
+            }
+         }
+         
+         # Perform the restore.
+         my $tmpFile = join('_', $dbFile, 'tmp');
+         unlink $tmpFile if (-e $tmpFile);
+         $Dbh->disconnect;                       # Close database.
+         if ( move($dbFile, $tmpFile) ) {        # Save current db file.
+            if ( copy($restFile, $dbFile) ) {    # Restore from backup file.
+               &ColorMessage("   Database restore successful.", "YELLOW", '');
+               return 2;
+            }
+            else {
+               &ColorMessage("\nDatabase file copy failed: $restFile - $!", 
+                             "BRIGHT_RED", '');
+               move($tmpFile, $dbFile);         # Restore saved db file   
+               return 2;
+            }
+         }
+         else {
+            &ColorMessage("\nFile create failed: $tmpFile - $!", "BRIGHT_RED", '');
+            return 1;
+         }
+      }
+      else {
+         &ColorMessage("\nFile not found: $restFile", "BRIGHT_YELLOW", '');
+         return 1;
       }
    }
    return 0;

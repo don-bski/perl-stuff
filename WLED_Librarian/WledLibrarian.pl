@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-librarian.pl                                             9-04-2025
+# FILE: wled-librarian.pl                                            10-05-2025
 #
 # SERVICES: WLED Preset Librarian  
 #
@@ -21,8 +21,6 @@ use Getopt::Std;
 require Win32::Console::ANSI if ($^O =~ m/Win/i);
 use Term::ReadKey;
 use DBI;
-use File::Copy;
-use Time::HiRes qw(sleep);
 
 # ==============================================================================
 # Global Variables
@@ -49,7 +47,6 @@ our %cliOpts = ();                           # CLI options working hash
 getopts('hadprf:c:', \%cliOpts);             # Load CLI options hash
 our $DbFile = 'wled_librarian.dbs';          # Default database file
 our $Dbh;                                    # Working reference to DB object
-our $ChildPid = 0;                           # Pid of forked child. ShowOnWled
 our $WledIp = '4.3.2.1';                     # WLED endpoint IP
 our $Sort = 'Lid ASC';                       # Default output ordering.
 
@@ -158,8 +155,7 @@ if (exists( $cliOpts{h} )) {
 
 # ==========
 # Setup for processing termination signals. Provides for properly closing the
-# database by the Ctrl_C subroutine. Signal TERM calls a seperate subroutine.
-# Used to simply exit a child process.                          
+# database by the Ctrl_C subroutine.                          
 foreach my $sig ('INT','QUIT','ABRT','STOP','KILL','HUP','TERM') {
    $SIG{$sig} = \&Ctrl_C;
 }
@@ -236,14 +232,10 @@ if ($Dbh) {
       
       # Parse and process the user input.
       %cmdHash = ('sort' => $Sort);   # Clear command and parsing hash. Set sort.
-      # Kill &ShowOnWled started child process if running. Forked code used to
-      # cycle preset on WIFI connected WLED.
-      if ($ChildPid != 0) { 
-         kill 'TERM', $ChildPid;
-         $ChildPid = 0;
-         sleep .1;
+      my $result = &ParseInput($Dbh, $inWork{'inbuf'}, \%cmdHash, $DbFile);
+      if ($result == 2) {
+         $Dbh = &InitDB($DbFile, '');
       }
-      &ParseInput($Dbh, $inWork{'inbuf'}, \%cmdHash);
       if ($cmdHash{'cmd0'} eq 'quit') {
          $runLoop = 0;
          last;
@@ -251,9 +243,9 @@ if ($Dbh) {
       # Save current sort if changed by sort command.
       $Sort = $cmdHash{'sort'} if ($Sort ne $cmdHash{'sort'});
    }
+   $Dbh->disconnect;    # Disconnect the database
 }
 
-# Disconnect the database, restore normal terminal input, and terminate.
-$Dbh->disconnect;
+# Restore normal terminal input and terminate.
 ReadMode('normal');
 exit(0);

@@ -1,3 +1,8 @@
+**10-05-2025** - WledLibrarian v1.0 adds a DATABASE command for backup and restore of the librarian
+database file. See help text for usage details. The tab key functionality has been extended to 
+include the backup: and restore: options. The tab key code has also been fixed for the directory 
+content output. Other miscellaneous changes remove unessential development related code.
+
 **9-12-2025** - WledLibrarian v0.71 fixes a bug related to display of the configuration file json data.
 
 **9-04-2025** - WledLibrarian v0.7 includes a new command; CFG. This command is used to set the default
