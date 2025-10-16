@@ -1,9 +1,9 @@
 ## WledLibrarian.pl
-A simple WLED preset librarian with old school CLI user interface. It is used to import WLED 
-presets as individual entities into a database. These preset data can be tagged and grouped by 
-the user as needed. For example, 'xmas' might identify the presets used in a holiday display. 
-Presets can be selected ad-hoc or by tag/group word for export to a WLED presets file or 
-directly to WLED over WIFI. 
+A simple WLED preset librarian with old school CLI user interface (a.k.a., TUI or Text User Interface). 
+It is used to import WLED presets as individual entities into a database. These preset data can be 
+tagged and grouped by the user as needed. For example, 'xmas' might identify the presets used in a 
+holiday display. Presets can be selected ad-hoc or by tag/group word for export to a WLED presets file 
+or directly to WLED over WIFI. 
 
 The program has been tested in Linux and Windows (strawberry perl) environments. To install on 
 Linux, download the contents of the Wled_Librarian folder to a user directory. Launch the 
