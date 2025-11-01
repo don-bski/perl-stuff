@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  9-13-2025
+# FILE: wled-tool.pl                                                  11-01-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -1107,6 +1107,19 @@ sub AuditionPresets {
       $presetIds{$id}{'name'} = $p_ref->{$id}{'n'};
       if (exists($p_ref->{$id}{'playlist'})) {
          $presetIds{$id}{'color'} = 'GREEN';
+         my $playref = $p_ref->{$id}{'playlist'};
+         if (ref($playref->{'ps'}) eq 'ARRAY') {
+            $presetIds{$id}{'plist'} = join(',', @{$playref->{'ps'}});
+         }
+         else {
+            $presetIds{$id}{'plist'} = $playref->{'ps'};
+         }
+         if (ref($playref->{'dur'}) eq 'ARRAY') {
+            $presetIds{$id}{'dur'} = join(',', @{$playref->{'dur'}});
+         }
+         else {
+            $presetIds{$id}{'dur'} = $playref->{'dur'};
+         }
       }
       else {
          $presetIds{$id}{'color'} = 'CYAN';
@@ -1187,6 +1200,10 @@ sub AuditionPresets {
          my $id = $1;
          last if ($id == 0);
          if (exists($presetIds{$id})) {
+            if (exists($presetIds{$id}{'plist'})) {
+               &ColorMessage("Playlist ids: $presetIds{$id}{'plist'}", "GREEN", '');
+               &ColorMessage("Playlist dur: $presetIds{$id}{'dur'}", "GREEN", '');
+            }
             last if (&PostJson(join("/", $WledUrl, "json/state"), qq({"ps": $id})));
             $s_ref->{'ps'} = $id;
          }
