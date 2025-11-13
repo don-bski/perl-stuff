@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  11-01-2025
+# FILE: wled-tool.pl                                                  11-13-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -115,9 +115,11 @@ GENERAL DESCRIPTION
    The -i option provides a some additional entry options. A non-persistent
    brightness change can be set using 'b <n>'; <n> 1-255. The b entry without
    a value displays the current brightness setting. Likewise, WLED default
-   brightness (db) or power-on-preset (dp) can be viewed or changed. db <n>
-   and dp <n> alter the current WLED configuration settings. 
-
+   brightness 'db' or power-on-preset 'dp' can be viewed or changed. 'db <n>'
+   and 'dp <n>' alter the current WLED configuration settings. The current
+   LED frame rate and power usage is viewed using 'f'. The 'r' input reboots
+   WLED.
+   
    The -f option is used to reformat a WLED configuration or preset file for
    easier use in a text editor. Extraneous whitespace is removed, newlines are 
    added, and some JSON data pairs are indented for better readability. The 
@@ -449,7 +451,7 @@ sub DisplayDebug {
 # ARGUMENTS:
 #    $Array          Pointer to array of json records.
 #    $String         Pointer to string of json data.
-#    $Clean          Milti-space removal if set.
+#    $Clean          Multi-space removal if set.
 #    $Quiet          No error message. Just return error.
 #
 # RETURNED VALUES:
@@ -1055,6 +1057,55 @@ sub GetUrl {
 }
 
 # =============================================================================
+# FUNCTION:  ShowPreset
+#
+# DESCRIPTION:
+#    This routine is called by AuditionPresets to display the current WLED 
+#    active preset and playlist to the user. The PresetIds hash is used to
+#    add the preset/playlist name to the output.
+#
+# CALLING SYNTAX:
+#    $result = &ShowPreset($WledUrl, \%PresetIds, $Color, $Nocr);
+#
+# ARGUMENTS:
+#    $WledUrl        URL of WLED.
+#    $PresetIds      Pointer to preset id hash.
+#    $Color          Message color; default 'WHITE'.
+#    $Nocr           Optional; suppress final message cr.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None.
+# =============================================================================
+sub ShowPreset {
+   my($WledUrl, $PresetIds, $Color, $Nocr) = @_;
+   my(@resp) = ();
+   $Color = 'WHITE' if ($Color eq '');
+   
+   return 1 if (&GetUrl(join("/", $WledUrl, 'json', 'state'), \@resp));
+   my $s_ref = decode_json(join('', @resp));
+   my $ps = $s_ref->{'ps'};
+   my $pl = $s_ref->{'pl'};
+   if ($ps > 0) {
+      my $pname = $$PresetIds{$ps}{'name'};
+      if ($pl <= 1) {
+         &ColorMessage("Active preset: $ps '$pname'", $Color, "$Nocr");
+      }
+      else {
+         &ColorMessage("Active preset: $ps '$pname'", $Color, 'nocr');
+         $pname = $$PresetIds{$pl}{'name'};
+         &ColorMessage("of playlist: $pl '$pname'", $Color, "$Nocr");
+      }
+   }
+   else {
+      &ColorMessage("Active preset: 0 'default'", $Color, "$Nocr");
+   }
+   return 0;
+}
+
+# =============================================================================
 # FUNCTION:  AuditionPresets
 #
 # DESCRIPTION:
@@ -1127,38 +1178,78 @@ sub AuditionPresets {
    }
    # print Dumper \%presetIds;
 
+   # Get WLED info from WLED. Selected parts are displayed in the header.
+   return 1 if (&GetUrl(join("/", $WledUrl, , 'json', 'info'), \@resp));
+   my $i_ref = decode_json(join('', @resp));
+   my $ver = $i_ref->{'ver'};
+   my $vid = $i_ref->{'vid'};
+   my $rev = $i_ref->{'release'};
+   my $heap = $i_ref->{'freeheap'};
+   my $fsu = $i_ref->{'fs'}{'u'};
+   my $fst = $i_ref->{'fs'}{'t'};
+   my $cap = sprintf("%.0f%", ($fsu/$fst)*100);
+   my $chan = $i_ref->{'wifi'}{'channel'};
+   my $sig = $i_ref->{'wifi'}{'signal'};
+   my $mpwr = $i_ref->{'leds'}{'maxpwr'};
+
    # Show user the available presets and associated Id.
    my $col = 0;   my $cols = 3;
    my $line = '=' x 75;
    &ColorMessage("\n$line", "WHITE", '');
-   &ColorMessage("WLED presets available for audition:", "WHITE", '');
-   foreach my $id (sort {$a <=> $b} keys(%presetIds)) {
-      &ColorMessage('  ' . substr("  $id", -3) . " ", "WHITE", 'nocr');
-      &ColorMessage(substr($presetIds{$id}{'name'} . ' ' x 20, 0, 20), 
-                           $presetIds{$id}{'color'}, 'nocr');
-      $col++;
-      if ($col == $cols) {
-         &ColorMessage("", "CYAN", '');
-         $col = 0;
-      }
+   &ColorMessage("WLED version: $ver   build: $vid   $rev", "WHITE", '');
+   &ColorMessage("WLED Filesystem: $fsu/$fst kB ($cap)   Free heap: $heap kB"
+                 , "WHITE", '');
+   &ColorMessage("Wifi chan: $chan   Wifi signal: $sig%     ", "WHITE", 'nocr');
+   if ($mpwr > 0) {
+      &ColorMessage("Max LED current: $mpwr mA", "WHITE", '');
    }
-   &ColorMessage("", "CYAN", '') if ($col != 0);
-   &ColorMessage("For a custom playlist enter: p,<n>,<n>,d,<s>", "WHITE", '');
+   else {
+      &ColorMessage("Max LED current: unlimited", "WHITE", '');
+   }
+
+   if (%presetIds) {
+      &ColorMessage("\nWLED presets available for audition:", "WHITE", '');
+      foreach my $id (sort {$a <=> $b} keys(%presetIds)) {
+         &ColorMessage('  ' . substr("  $id", -3) . " ", "WHITE", 'nocr');
+         &ColorMessage(substr($presetIds{$id}{'name'} . ' ' x 20, 0, 20), 
+                              $presetIds{$id}{'color'}, 'nocr');
+         $col++;
+         if ($col == $cols) {
+            &ColorMessage("", "CYAN", '');
+            $col = 0;
+         }
+      }
+      &ColorMessage("", "WHITE", '') if ($col != 0);
+   }
+   else {
+      &ColorMessage("\nNo presets found.", "YELLOW", '');
+   }
+   &ColorMessage("\nFor a custom playlist enter: p,<n>,<n>,d,<s>", "WHITE", '');
    &ColorMessage("Default brightness: db <n> (1-255)", "WHITE", '');
    &ColorMessage("Power-on-preset: dp <n> (1-250)", "WHITE", '');
    &ColorMessage("LED brightness: b <n> (1-255) or b +<n> or b -<n>", "WHITE", '');
+   &ColorMessage("Active fps and power: f", "WHITE", '');
+   &ColorMessage("Reboot WLED: r", "WHITE", '');
    &ColorMessage("$line", "WHITE", '');
 
    # Get user input and process.
    while (1) {
-      &ColorMessage("Enter a preset number or 0 to exit. -> ", "WHITE", 'nocr');
+      &ColorMessage("Command, preset number, or q to quit. -> ", "WHITE", 'nocr');
       my $preset = <STDIN>;
       chomp($preset);
       next if ($preset eq '');
       last if ($preset =~ m/^q/i or $preset =~ m/^e/i);    # Accept quit or exit.
 
       # ==========
-      if ($preset =~ m/^p/i) {           # User wants a custom playlist.
+      if ($preset =~ m/^r/i) {              # User wants a WLED reset.
+          return 1 if (&PostJson(join("/", $WledUrl, "json/state"), 
+                     qq({"on":true,"rb":true})));
+         &ColorMessage("Reset sent to WLED. Wait ~15 sec for network reconnect." ,
+                       "YELLOW", '');
+      }
+
+      # ==========
+      elsif ($preset =~ m/^p/i) {           # User wants a custom playlist.
          my @pset = ();  my $dur = 15;
          # Isolate presets.
          if ($preset =~ m/p([0-9,]+)/i) {
@@ -1190,22 +1281,19 @@ sub AuditionPresets {
             }
          }
          else {
-            my $msg = "Active preset is: $s_ref->{'ps'}";
-            $msg = join(' ', $msg, '(default)') if ($s_ref->{'ps'} == -1);
-            &ColorMessage($msg, "CYAN", '');
+            # -p only. Show active preset/playlist.
+            return 1 if (&ShowPreset($WledUrl, \%presetIds, 'CYAN', ''));
          }
       }
       # ==========
       elsif ($preset =~ m/^(\d+)$/) {    # User wants a single preset.
          my $id = $1;
-         last if ($id == 0);
          if (exists($presetIds{$id})) {
             if (exists($presetIds{$id}{'plist'})) {
                &ColorMessage("Playlist ids: $presetIds{$id}{'plist'}", "GREEN", '');
                &ColorMessage("Playlist dur: $presetIds{$id}{'dur'}", "GREEN", '');
             }
             last if (&PostJson(join("/", $WledUrl, "json/state"), qq({"ps": $id})));
-            $s_ref->{'ps'} = $id;
          }
          else {
             &ColorMessage("Invalid preset Id: $id", "BRIGHT_RED", '');
@@ -1243,6 +1331,17 @@ sub AuditionPresets {
          }
       }
       # ==========
+      elsif ($preset =~ m/^f$/i) {           # Show WLED frame rate.
+         # Show active preset/playlist.
+         return 1 if (&ShowPreset($WledUrl, \%presetIds, 'CYAN', 'nocr'));
+         # Get active fps/power usage.
+         return 1 if (&GetUrl(join("/", $WledUrl, , 'json', 'info'), \@resp));
+         $i_ref = decode_json(join('', @resp));
+         my $fps = $i_ref->{'leds'}{'fps'};
+         my $pwr = sprintf("%.1f", $i_ref->{'leds'}{'pwr'} / 1000);
+         &ColorMessage("  fps: $fps  pwr: $pwr A", "CYAN", '');
+      }
+      # ==========
       elsif ($preset =~ m/^db$/i) {            # db with no value
          # Get the WLED configuration data.
          return 1 if (&GetUrl(join("/", $WledUrl, 'cfg.json'), \@resp));
@@ -1267,16 +1366,29 @@ sub AuditionPresets {
          # Get the WLED configuration data.
          return 1 if (&GetUrl(join("/", $WledUrl, 'cfg.json'), \@resp));
          my $c_ref = decode_json(join('', @resp));
-         &ColorMessage("Power-on-preset is: $c_ref->{'def'}{'ps'}", "CYAN", '');
+         my $ps = $c_ref->{'def'}{'ps'};
+         if ($ps > 0) {
+            my $pname = $presetIds{$ps}{'name'};
+            &ColorMessage("Power-on-preset is: $ps '$pname'", "CYAN", '');
+         }
+         else {
+            &ColorMessage("Power-on-preset is: 0 'default'", "CYAN", '');
+         }
       }
       elsif ($preset =~ m/^dp\s*([0-9]+)/i) {  # User wants power-on-preset change.
          my $val = $1;
       
          # Update parameter value in configuration working hash and send to WLED.
-         if ($val > 0 and $val < 251) {
+         if ($val >= 0 and $val < 251) {
             last if (&PostJson(join("/", $WledUrl, "json/cfg"), 
                qq({"def":{"on":true,"ps":$val}})));
-            &ColorMessage("Set power-on-preset to: $val", "CYAN", '');
+            if ($val > 0) {
+               my $pname = $presetIds{$val}{'name'};
+               &ColorMessage("Power-on-preset is: $val '$pname'", "CYAN", '');
+            }
+            else {
+               &ColorMessage("Power-on-preset is: 0 'default'", "CYAN", '');
+            }
          }
          else {
             &ColorMessage("Invalid power-on-preset value: $val", "BRIGHT_RED", '');
@@ -1487,6 +1599,17 @@ if (exists( $cliOpts{p} )) {
    $cliOpts{p} = $Sections{'presets'} if ($cliOpts{p} eq '-');
    exit(1) if (&GetUrl(join("/", $WledUrl, "presets.json"), \@resp));
    exit(1) if (&ValidateJson(\@resp, '', 'clean','')); # Remove extra whitespace.
+         
+   # Display custom palette references, if any.
+   my $temp = join('', @resp);
+   my @pals = $temp =~ m/"pal":(\d{3})/g;
+   foreach my $pal (@pals) {
+      if ($pal > 245) {
+         my $n = 255 - $pal;
+         &ColorMessage("Custom palette reference $pal: palette${n}", "YELLOW", '');
+      }
+   }
+         
    exit(1) if (&WriteFile($cliOpts{p}, \@resp, 'trim'));
    &ColorMessage("Preset backup $cliOpts{p} successfully created.", "WHITE", '');
 }
@@ -1509,14 +1632,26 @@ if (exists( $cliOpts{P} )) {
          my @data = ();
          my $path = &GetTmpDir();
          exit(1) if (&ReadFile($file, \@data, 'trim'));
+         
+         # Display custom palette references, if any.
+         my $temp = join('', @data);
+         my @pals = $temp =~ m/"pal":(\d{3})/g;
+         foreach my $pal (@pals) {
+            if ($pal > 245) {
+               my $n = 255 - $pal;
+               &ColorMessage("Custom palette reference $pal: palette${n}", "YELLOW", '');
+            }
+         }
+         
          $file = join('/', $path,'presets.json');
          exit(1) if (&WriteFile($file, \@data, 'trim'));
       }
       exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $file));
       &ColorMessage("Presets successfully restored from $cliOpts{P}", "WHITE", '');
       unlink $file if ($file ne $cliOpts{P});   # Delete tmp file.
-      # If -r or -b options were also specified, don't exit here.
+      # If -r or -C options were also specified, don't exit here.
       exit(0) unless ( exists($cliOpts{r}) or exists($cliOpts{C}) );
+      sleep 1;    # Give WLED time to process the preset data.
    }
    else {
       &ColorMessage("File not found: $cliOpts{P}", "BRIGHT_RED", '');
@@ -1611,11 +1746,11 @@ if (exists( $cliOpts{A} )) {
    my @data = ();
    exit(1) if (&ReadFile($cliOpts{A}, \@data, 'trim'));
    if (grep /== eof ==/, @data) {
-      foreach my $section ("presets","palettes","ledmaps","configuration") {
+      foreach my $section ('presets','palettes','ledmaps','configuration') {
          # Extract data records for section.
          my @secData = ();  my $beg = -1;
          for (my $x = 0; $x <= $#data; $x++) {
-            if ($beg != -1 and ($data[$x] =~ m/^== \w+ ==$/ or $x == $#data)) {
+            if ($beg != -1 and $data[$x] =~ m/^== \w+ ==$/i) {
                @secData = splice(@data, $beg, ($x - $beg));
                last;
             }
@@ -1623,35 +1758,44 @@ if (exists( $cliOpts{A} )) {
                $beg = $x +1;
             }
          }
+         if ($beg == -1) {
+            &ColorMessage("Section '$section' missing. Invalid file: $cliOpts{A}",
+                          "BRIGHT_RED", '');
+            exit(1);
+         }
+
          # Process the extracted records.
          if ($section eq 'presets' or $section eq 'configuration') {
-            my $name = join('/', &GetTmpDir(), $Sections{$section});
-            exit(1) if (&WriteFile($name, \@secData, 'trim'));
-            exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $name));
+            my $filename = join('/', &GetTmpDir(), $Sections{$section});
+            exit(1) if (&WriteFile($filename, \@secData, 'trim'));
+            exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $filename));
             &ColorMessage("$Sections{$section} data successfully sent.", "WHITE", '');
-            unlink $name;
+            unlink $filename;
+            sleep 1;       # Delay for WLED to process the upload.
          }
          elsif ($section eq 'palettes') {
             for (my $x = 0; $x <= $#secData; $x++) {
+               last unless ($secData[$x] =~ m/palette/);  # End of palettes section.
                if ($secData[$x] =~ m/^palette\d\.json$/) {
-                  my $name = join('/', &GetTmpDir(), $secData[$x]);
+                  my $filename = join('/', &GetTmpDir(), $secData[$x]);
                   my @array = ("$secData[$x +1]");
-                  exit(1) if (&WriteFile($name, \@array, 'trim'));
-                  exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $name));
+                  exit(1) if (&WriteFile($filename, \@array, 'trim'));
+                  exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $filename));
                   &ColorMessage("$secData[$x] data successfully sent.", "WHITE", '');
-                  unlink $name;
+                  unlink $filename;
                }
             }
          }
          elsif ($section eq 'ledmaps') {
             for (my $x = 0; $x <= $#secData; $x++) {
+               last unless ($secData[$x] =~ m/map/);   # End of ledmaps section.
                if ($secData[$x] =~ m/^ledmap\d\.json$/) {
-                  my $name = join('/', &GetTmpDir(), $secData[$x]);
+                  my $filename = join('/', &GetTmpDir(), $secData[$x]);
                   my @array = ("$secData[$x +1]");
-                  exit(1) if (&WriteFile($name, \@array, 'trim'));
-                  exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $name));
+                  exit(1) if (&WriteFile($filename, \@array, 'trim'));
+                  exit(1) if (&PostUrl(join("/", $WledUrl, "upload"), $filename));
                   &ColorMessage("$secData[$x] data successfully sent.", "WHITE", '');
-                  unlink $name;
+                  unlink $filename;
                }
             }
          }
@@ -1857,9 +2001,10 @@ if (exists( $cliOpts{x} )) {
 # Reset WLED.
 if (exists( $cliOpts{r} )) {
    sleep 1 if (exists( $cliOpts{P} ));   # Wait for WLED to process presets restore. 
-   my @resp = ();
-   exit(1) if (&GetUrl(join("/", $WledUrl, 'win&RB'), \@resp));
-   &ColorMessage("Reset sent to WLED. Wait ~15 sec for network reconnect.", "WHITE", '');
+   exit(1) if (&PostJson(join("/", $WledUrl, "json/state"), 
+               qq({"on":true,"rb":true})));
+   &ColorMessage("Reset sent to WLED. Wait ~15 sec for network reconnect.",
+                 "WHITE", '');
 }
 
 exit(0);
