@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wled-tool.pl                                                  11-13-2025
+# FILE: wled-tool.pl                                                 11-23-2025
 #
 # SERVICES: Access WLED using JSON API  
 #
@@ -46,7 +46,7 @@ require Win32::Console::ANSI if ($^O =~ m/Win/i);
 use LWP::UserAgent;
 use JSON;
 use File::Copy;
-# use Data::Dumper;
+use Data::Dumper;
 # use warnings;
 
 # ==============================================================================
@@ -99,26 +99,6 @@ GENERAL DESCRIPTION
    control to set and save the AP SSID and AP password. (The AP password is not
    backed up by WLED for security reasons.) Power cycle the WLED ESP32 module.
    Then use the -A option to restore the working data.
-
-   The -i option provides a basic means for selecting an operational WLED
-   preset. This supports preset audition and testing when the WLED GUI is not
-   available. The current presets are read from WLED and presented to the
-   user for selection; green colored entries signify playlists. Input the
-   numeric value for the desired preset and press enter. 
-     
-   The -i option also supports entry of a custom playlist. Enter a comma
-   separated list: p,<n>,<n>,d,<s>  where p is followed by one or more
-   preset numbers and optional d is followed by a time duration in seconds
-   between 0 and 3600. Duration defaults to 15 seconds if not specified. The
-   p entry with no values will display the current active preset.
-   
-   The -i option provides a some additional entry options. A non-persistent
-   brightness change can be set using 'b <n>'; <n> 1-255. The b entry without
-   a value displays the current brightness setting. Likewise, WLED default
-   brightness 'db' or power-on-preset 'dp' can be viewed or changed. 'db <n>'
-   and 'dp <n>' alter the current WLED configuration settings. The current
-   LED frame rate and power usage is viewed using 'f'. The 'r' input reboots
-   WLED.
    
    The -f option is used to reformat a WLED configuration or preset file for
    easier use in a text editor. Extraneous whitespace is removed, newlines are 
@@ -133,6 +113,61 @@ GENERAL DESCRIPTION
    Comment lines, beginning with the # character, may be included in the file 
    data for documentation purposes. Comment data is not sent to WLED. Multiple 
    comma seperated files or a file name wildcard character may be specified.
+
+   The -i option provides interactive preset audition and test functionality.
+   The available preset Ids are read from WLED and displayed for user selection; 
+   green colored entries signify playlists. WLED is instructed to activate the 
+   selected preset using its JSON API. Other user commands, as noted below, are
+   also available. Except as noted, audition activity does not change the current
+   WLED settings established by the WLED configuration files. 
+   
+   The following commands are available while running in preset audition mode.
+   Brackets [] identify optional command arguments.
+   
+   Numeric value: <n>
+      Activate the specified WLED preset or playlist Id.
+     
+   Custom playlist: p [<n> <n> [d <s>]]
+      Activate the specified playlist on WLED where 'p' is followed by one or 
+      more preset Ids. Optional 'd' is followed by a time duration in seconds
+      (0-3600). Duration defaults to 15 seconds if not specified. 'p' alone 
+      displays the current active preset.
+   
+   LED brightness: b [[+|-]<n>]
+      Activate the specified WLED master LED brightness level where <n> is a
+      value 1-255. 'b' alone displays the current master brightness. Use + 
+      or - to specify a relative value. e.g. -50 
+
+   LED frame rate and power usage: f
+      Shows the frame rate and power usage for the active WLED preset.
+      
+   WLED reboot: r
+      Reboots WLED. Wait ~15 seconds for reboot and WIFI reconnect.
+      
+   WLED default brightness: db [<n>]    (Persistent setting)
+      Sets the specified WLED default brightness (1-255). The current WLED 
+      default brightness value is displayed if not specified. This value is 
+      used on subsequent WLED reboots and overwritten by restore of the WLED
+      configuration from a backup.
+      
+   WLED power on preset: dp [<n>]       (Persistent setting)
+      Sets the specified WLED power on preset Id (1-250). The current WLED 
+      value is displayed if not specified. This preset will be activated 
+      when WLED reboots. Overwritten by a WLED configuration restore.
+      
+   Active preset effect speed: s [<seg> [+|-]<n>]
+      Sets the effect speed (sx) for the specified segment of the active
+      preset (0-255). 's' alone displays all segments of the active preset.
+      Use + or - to specify a relative value. e.g. +10 
+   
+   Active preset effect intensity: i [<seg> [+|-]<n>]
+      Sets the effect intensity (ix) for the specified segment of the active
+      preset (0-255). 'i' alone displays all segments of the active preset.
+      Use + or - to specify a relative value. e.g. -10 
+   
+   Heading data: h
+      Displays the audition mode heading text which includes WLED version
+      information, available presets, and interactive command summary.
    
 USAGE:
    $ExecutableName  [-h] [-d] [-i] [-l] [-r] [-e <url>] [-a <file>] [-A <file>]
@@ -1106,29 +1141,19 @@ sub ShowPreset {
 }
 
 # =============================================================================
-# FUNCTION:  AuditionPresets
+# FUNCTION:  AuditionHead
 #
 # DESCRIPTION:
-#    This routine gets the presets data from WLED and displays the available
-#    preset names and associated Id. An interactive loop is then entered that
-#    requests user Id input. The user entered Id value is sent to WLED to set
-#    the specified preset active. An Id value of zero (0) terminates the loop.
-#
-#    The -i option also supports entry of a custom playlist. Enter a comma
-#    separated list: p,<n>,<n>,d,<s>  where p is followed by one or more
-#    preset numbers and optional d is followed by a time duration in seconds
-#    between 0 and 3600. Duration defaults to 15 seconds if not specified. 
-#
-#    To change the WLED brightness setting, enter b<n> where <n> is a value
-#    in the range 1-255. A relative brightness change can be entered by adding
-#    a + or - character. b+<n> or b-<n>.
-#    
+#    This routine is called by AuditionPresets to display the heading text.
+#    Called during startup of audition mode and in response to user entry of
+#    the 'h' command.
 #
 # CALLING SYNTAX:
-#    $result = &AuditionPresets($WledUrl);
+#    $result = &AuditionHead($WledUrl, \%PresetIds);
 #
 # ARGUMENTS:
 #    $WledUrl        URL of WLED.
+#    $PresetIds      Pointer to preset id hash.
 #
 # RETURNED VALUES:
 #    0 = Success,  1 = Error.
@@ -1136,48 +1161,10 @@ sub ShowPreset {
 # ACCESSED GLOBAL VARIABLES:
 #    None.
 # =============================================================================
-sub AuditionPresets {
-   my($WledUrl) = @_;
-   my(@resp) = ();   my(%presetIds) = ();
-
-   # Get WLED state data which includes the current brightness setting. This is
-   # used for a user requested brightness change (b) during audition.
-   return 1 if (&GetUrl(join("/", $WledUrl, 'json', 'state'), \@resp));
-   my $s_ref = decode_json(join('', @resp));
-   # $Data::Dumper::Sortkeys = 1;
-   # print Dumper $s_ref;
-
-   # Get available presets from WLED and load the working hash.
-   return 1 if (&GetUrl(join("/", $WledUrl, "presets.json"), \@resp));
-   my $p_ref = decode_json(join('', @resp));
-   # $Data::Dumper::Sortkeys = 1;
-   # print Dumper $p_ref;
+sub AuditionHead {
+   my($WledUrl, $PresetIds) = @_;
+   my(@resp) = ();
    
-   foreach my $id (keys(%$p_ref)) {
-      next if ($id == 0);
-      $presetIds{$id}{'name'} = $p_ref->{$id}{'n'};
-      if (exists($p_ref->{$id}{'playlist'})) {
-         $presetIds{$id}{'color'} = 'GREEN';
-         my $playref = $p_ref->{$id}{'playlist'};
-         if (ref($playref->{'ps'}) eq 'ARRAY') {
-            $presetIds{$id}{'plist'} = join(',', @{$playref->{'ps'}});
-         }
-         else {
-            $presetIds{$id}{'plist'} = $playref->{'ps'};
-         }
-         if (ref($playref->{'dur'}) eq 'ARRAY') {
-            $presetIds{$id}{'dur'} = join(',', @{$playref->{'dur'}});
-         }
-         else {
-            $presetIds{$id}{'dur'} = $playref->{'dur'};
-         }
-      }
-      else {
-         $presetIds{$id}{'color'} = 'CYAN';
-      }
-   }
-   # print Dumper \%presetIds;
-
    # Get WLED info from WLED. Selected parts are displayed in the header.
    return 1 if (&GetUrl(join("/", $WledUrl, , 'json', 'info'), \@resp));
    my $i_ref = decode_json(join('', @resp));
@@ -1207,12 +1194,13 @@ sub AuditionPresets {
       &ColorMessage("Max LED current: unlimited", "WHITE", '');
    }
 
-   if (%presetIds) {
+   if (%$PresetIds) {
       &ColorMessage("\nWLED presets available for audition:", "WHITE", '');
-      foreach my $id (sort {$a <=> $b} keys(%presetIds)) {
+      foreach my $id (sort {$a <=> $b} keys(%$PresetIds)) {
+         next if ($id == 0);
          &ColorMessage('  ' . substr("  $id", -3) . " ", "WHITE", 'nocr');
-         &ColorMessage(substr($presetIds{$id}{'name'} . ' ' x 20, 0, 20), 
-                              $presetIds{$id}{'color'}, 'nocr');
+         &ColorMessage(substr($$PresetIds{$id}{'name'} . ' ' x 20, 0, 20), 
+                              $$PresetIds{$id}{'color'}, 'nocr');
          $col++;
          if ($col == $cols) {
             &ColorMessage("", "CYAN", '');
@@ -1224,13 +1212,269 @@ sub AuditionPresets {
    else {
       &ColorMessage("\nNo presets found.", "YELLOW", '');
    }
-   &ColorMessage("\nFor a custom playlist enter: p,<n>,<n>,d,<s>", "WHITE", '');
+   &ColorMessage("\nFor a custom playlist enter: p <n>,<n> d <s>", "WHITE", '');
    &ColorMessage("Default brightness: db <n> (1-255)", "WHITE", '');
    &ColorMessage("Power-on-preset: dp <n> (1-250)", "WHITE", '');
-   &ColorMessage("LED brightness: b <n> (1-255) or b +<n> or b -<n>", "WHITE", '');
+   &ColorMessage("LED brightness: b <n> (1-255) or b +/-<n>", "WHITE", '');
+   &ColorMessage("Effect speed: s <seg> <n> (0-255) or s <seg> +/-<n>", "WHITE", '');
+   &ColorMessage("Effect intensity: i <seg> <n> (0-255) or i <seg> +/-<n>", "WHITE", '');
    &ColorMessage("Active fps and power: f", "WHITE", '');
    &ColorMessage("Reboot WLED: r", "WHITE", '');
+   &ColorMessage("Help: h", "WHITE", '');
    &ColorMessage("$line", "WHITE", '');
+   return 0;
+}
+
+# =============================================================================
+# FUNCTION:  AuditionCmd
+#
+# DESCRIPTION:
+#    This routine is called to process some user entered audition mode (-i)
+#    commands. These are commands which support numeric value input such as
+#    brightness (b), effect speed (s), and effect intensity (i). 
+#
+#    For a command with no value specified, the current WLED setting for the
+#    command will be displayed. A command with a value with set the specified
+#    absolute value. Command with value preceeded by + or - applies the value
+#    as a relative change to the current value.
+#    
+# CALLING SYNTAX:
+#    $result = &AuditionCmd($WledUrl, $PresetIds, $Cmd);
+#
+# ARGUMENTS:
+#    $WledUrl        URL of WLED.
+#    $PresetIds      Pointer to %presetIds hash. (for preset names).
+#    $Cmd            Command to be processed.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error, 2 = No command found.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None.
+# =============================================================================
+sub AuditionCmd {
+   my($WledUrl, $PresetIds, $Cmd) = @_;
+   my(@resp) = ();
+
+   if ($Cmd =~ m/^b/ or $Cmd =~ m/^s/ or $Cmd =~ m/^i/) {
+      # Get WLED state data with current values.
+      return 1 if (&GetUrl(join("/", $WledUrl, 'json', 'state'), \@resp));
+      my $s_ref = decode_json(join('', @resp));
+      # $Data::Dumper::Sortkeys = 1;
+      # print Dumper $s_ref;
+         
+      # Get valid preset segment numbers.
+      my @validSeg = ();
+      foreach my $segref (@{ $s_ref->{'seg'} }) {
+         push (@validSeg, $segref->{'id'});
+      }
+      &DisplayDebug("Valid segment ids: '@validSeg'");
+
+      # ==========
+      if ($Cmd =~ m/^b$/i) {           # b with no value
+         &ColorMessage("LED brightness is: $s_ref->{'bri'}", "CYAN", '');
+         return 0;
+      }
+      elsif ($Cmd =~ m/^b\s*([\+|\-]*[0-9]+)/i) {   # User wants brightness change.
+         my $bri = $s_ref->{'bri'};
+         my $val = $1;
+         if ($val =~ m/^[\+|\-]/) {        # relative value?
+            $bri += $val;
+         }
+         else {
+            $bri = $val;
+         }
+         $bri = 1 if ($bri < 1);
+         $bri = 255 if ($bri > 255);
+         $s_ref->{'bri'} = $bri;
+         return 1 if (&PostJson(join("/", $WledUrl, "json/state"), 
+                      qq({"on":true,"bri": $bri})));
+         &ColorMessage("LED brightness set to: $bri", "CYAN", '');
+         return 0;
+      }
+      # ==========
+      elsif ($Cmd =~ m/^s$/i or $Cmd =~ m/^i$/i) {      # s or i with no value
+         foreach my $segref (@{ $s_ref->{'seg'} }) {    # Show user current values.
+            &ColorMessage("  seg: $segref->{'id'}   sx: $segref->{'sx'}   " .
+                          "ix: $segref->{'ix'}", "CYAN", '');
+         }
+         return 0;
+      }
+      elsif ($Cmd =~ m/^s\s*([0-9]+)\s([\+|\-]*[0-9]+)/i) {  # User wants s change.
+         my $seg = $1;   my $val = $2;
+         if (grep /$seg/, @validSeg) {
+            my $segref = @{ $s_ref->{'seg'} }[$seg];
+            my $sx = $segref->{'sx'};                      # current value
+            &DisplayDebug("seg: $seg   val: '$val'   sx: '$sx'");
+            if ($val =~ m/^[\+|\-]/) {        # relative value?
+               $sx += $val;
+            }
+            else {
+               $sx = $val;
+            }
+            $sx = 255 if ($sx > 255);
+            $sx = 0 if ($sx < 0);
+            $segref->{'sx'} = $sx;
+            last if (&PostJson(join("/", $WledUrl, "json/state"), 
+                        qq({"seg":[{"id":$seg,"sx":$sx}]})));
+            &ColorMessage("Segment $seg sx set to: $sx", "CYAN", '');
+            return 0;
+         }
+         else {
+            &ColorMessage("Invalid segment: $seg   ", "BRIGHT_RED", 'nocr');
+            return 2;
+         }
+      }
+      elsif ($Cmd =~ m/^i\s*([0-9]+)\s([\+|\-]*[0-9]+)/i) {  # User wants s change.
+         my $seg = $1;   my $val = $2;
+         if (grep /$seg/, @validSeg) {
+            my $segref = @{ $s_ref->{'seg'} }[$seg];
+            my $ix = $segref->{'ix'};                      # current value
+            &DisplayDebug("seg: $seg   val: '$val'   ix: '$ix'");
+            if ($val =~ m/^[\+|\-]/) {        # relative value?
+               $ix += $val;
+            }
+            else {
+               $ix = $val;
+            }
+            $ix = 255 if ($ix > 255);
+            $ix = 0 if ($ix < 0);
+            $segref->{'ix'} = $ix;
+            last if (&PostJson(join("/", $WledUrl, "json/state"), 
+                        qq({"seg":[{"id":$seg,"ix":$ix}]})));
+            &ColorMessage("Segment $seg ix set to: $ix", "CYAN", '');
+            return 0;
+         }
+         else {
+            &ColorMessage("Invalid segment: $seg   ", "BRIGHT_RED", 'nocr');
+            return 2;
+         }
+      }
+   }
+   elsif ($Cmd =~ m/^db/ or $Cmd =~ m/^dp/) {
+      # Get the WLED configuration data.
+      return 1 if (&GetUrl(join("/", $WledUrl, 'cfg.json'), \@resp));
+      my $c_ref = decode_json(join('', @resp));
+      # $Data::Dumper::Sortkeys = 1;
+      # print Dumper $c_ref;
+
+      # ==========
+      if ($Cmd =~ m/^db$/i) {            # db with no value
+         &ColorMessage("Default LED brightness is: $c_ref->{'def'}{'bri'}", "CYAN", '');
+         return 0;
+      }
+      elsif ($Cmd =~ m/^db\s*([0-9]+)/i) {  # User wants default brightness change.
+         my $val = $1;
+         $val = 1 if ($val < 1);
+         $val = 255 if ($val > 255);
+         return 1 if (&PostJson(join("/", $WledUrl, "json/cfg"), 
+                      qq({"def":{"on":true,"bri":$val}})));
+         &ColorMessage("Set default LED brightness to: $val", "CYAN", '');
+         return 0;
+      }
+      # ==========
+      elsif ($Cmd =~ m/^dp$/i) {            # dp with no value
+         my $ps = $c_ref->{'def'}{'ps'};
+         my $pname = $$PresetIds{$ps}{'name'};
+         &ColorMessage("Power-on-preset is: $ps '$pname'", "CYAN", '');
+         return 0;
+      }
+      elsif ($Cmd =~ m/^dp\s*([0-9]+)/i) {  # User wants power-on-preset change.
+         my $val = $1;
+         $val = 1 if ($val < 1);
+         $val = 255 if ($val > 255);
+         return 1 if (&PostJson(join("/", $WledUrl, "json/cfg"), 
+                      qq({"def":{"on":true,"ps":$val}})));
+         my $pname = $$PresetIds{$val}{'name'};
+         &ColorMessage("Power-on-preset set to: $val '$pname'", "CYAN", '');
+         return 0;
+      }
+   }
+   elsif ($Cmd =~ m/^f$/i) {                # Show user WLED frame rate.
+      # Show active preset/playlist.
+      return 1 if (&ShowPreset($WledUrl, $PresetIds, 'CYAN', 'nocr'));
+      # Get active fps/power usage.
+      return 1 if (&GetUrl(join("/", $WledUrl, , 'json', 'info'), \@resp));
+      $i_ref = decode_json(join('', @resp));
+      my $fps = $i_ref->{'leds'}{'fps'};
+      my $pwr = sprintf("%.1f", $i_ref->{'leds'}{'pwr'} / 1000);
+      &ColorMessage("  fps: $fps  pwr: $pwr A", "CYAN", '');
+      return 0;
+   }
+   elsif ($Cmd =~ m/^r/i) {                # User wants a WLED reset.
+       return 1 if (&PostJson(join("/", $WledUrl, "json/state"), 
+                    qq({"on":true,"rb":true})));
+      &ColorMessage("Reset sent to WLED. Wait ~15 sec for network reconnect." ,
+                    "YELLOW", '');
+      return 0;
+   }
+   return 2;
+}
+
+# =============================================================================
+# FUNCTION:  AuditionPresets
+#
+# DESCRIPTION:
+#    This routine gets the presets data from WLED and displays the available
+#    preset names and associated Id. An interactive loop is then entered that
+#    requests a preset Id or other supported sub-command input. 
+#
+#    A user entered preset Id value, custom playlist (p), or loop termination
+#    command (q ord e) are processed by this subroutine. Other sub-command 
+#    input is processed by a called subroutine.
+#
+# CALLING SYNTAX:
+#    $result = &AuditionPresets($WledUrl);
+#
+# ARGUMENTS:
+#    $WledUrl        URL of WLED.
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None.
+# =============================================================================
+sub AuditionPresets {
+   my($WledUrl) = @_;
+   my(@resp) = ();   my(%presetIds) = ();
+
+   # Get available presets from WLED and load the working hash.
+   return 1 if (&GetUrl(join("/", $WledUrl, "presets.json"), \@resp));
+   my $p_ref = decode_json(join('', @resp));
+   # $Data::Dumper::Sortkeys = 1;
+   # print Dumper $p_ref;
+   
+   foreach my $id (keys(%$p_ref)) {
+      if ($id == 0) {
+         $presetIds{$id}{'name'} = 'default';
+         next;
+      }
+      $presetIds{$id}{'name'} = $p_ref->{$id}{'n'};
+      if (exists($p_ref->{$id}{'playlist'})) {
+         $presetIds{$id}{'color'} = 'GREEN';
+         my $playref = $p_ref->{$id}{'playlist'};
+         if (ref($playref->{'ps'}) eq 'ARRAY') {
+            $presetIds{$id}{'plist'} = join(',', @{$playref->{'ps'}});
+         }
+         else {
+            $presetIds{$id}{'plist'} = $playref->{'ps'};
+         }
+         if (ref($playref->{'dur'}) eq 'ARRAY') {
+            $presetIds{$id}{'dur'} = join(',', @{$playref->{'dur'}});
+         }
+         else {
+            $presetIds{$id}{'dur'} = $playref->{'dur'};
+         }
+      }
+      else {
+         $presetIds{$id}{'color'} = 'CYAN';
+      }
+   }
+   # print Dumper \%presetIds;
+   
+   # Show heading data.
+   return 1 if (&AuditionHead($WledUrl, \%presetIds));
 
    # Get user input and process.
    while (1) {
@@ -1239,25 +1483,45 @@ sub AuditionPresets {
       chomp($preset);
       next if ($preset eq '');
       last if ($preset =~ m/^q/i or $preset =~ m/^e/i);    # Accept quit or exit.
-
+      if ($preset =~ m/^h/i) {
+         return 1 if (&AuditionHead($WledUrl, \%presetIds));
+         next;
+      }
+      
       # ==========
-      if ($preset =~ m/^r/i) {              # User wants a WLED reset.
-          return 1 if (&PostJson(join("/", $WledUrl, "json/state"), 
-                     qq({"on":true,"rb":true})));
-         &ColorMessage("Reset sent to WLED. Wait ~15 sec for network reconnect." ,
-                       "YELLOW", '');
+      if ($preset =~ m/^(\d+)$/) {    # User wants a single preset.
+         my $id = $1;
+         if (exists($presetIds{$id})) {
+            if (exists($presetIds{$id}{'plist'})) {
+               &ColorMessage("Playlist ids: $presetIds{$id}{'plist'}", "GREEN", '');
+               my @durs = split(',', $presetIds{$id}{'dur'});
+               my @durSec = ();
+               foreach my $dur (@durs) {
+                  push (@durSec, sprintf("%.1fs", $dur / 10));
+               }
+               &ColorMessage("Playlist dur: " . join(',', @durSec), "GREEN", '');
+            }
+            else {
+               my $pname = $presetIds{$id}{'name'};
+               &ColorMessage("Set preset: $id '$pname'", "CYAN", '');
+            }
+            last if (&PostJson(join("/", $WledUrl, "json/state"), qq({"ps": $id})));
+         }
+         else {
+            &ColorMessage("Invalid preset Id: $id", "BRIGHT_RED", '');
+         }
       }
 
       # ==========
       elsif ($preset =~ m/^p/i) {           # User wants a custom playlist.
          my @pset = ();  my $dur = 15;
          # Isolate presets.
-         if ($preset =~ m/p([0-9,]+)/i) {
-            my $data = $1;
-            $data =~ s/^,|,$//g;
-            @pset = split(',', $data);
+         if ($preset =~ m/p\s([0-9,]+)/i) {
+            my $list = $1;
+            $list =~ s/^,//;
+            @pset = split(',', $list);
             # Get duration if specified.
-            if ($preset =~ m/d,(\d+)/i) {
+            if ($preset =~ m/\sd\s(\d+)/i) {
                $dur = $1 unless ($1 < 1 or $1 > 3600);
             }
          }
@@ -1278,125 +1542,23 @@ sub AuditionPresets {
                my $json = '{"playlist": {"ps": [' . join(',', @pset) .
                   '],"dur": [' . $dur . '],"transition": 0,"repeat": 0}}';
                last if (&PostJson(join("/", $WledUrl, "json/state"), $json));
+               &ColorMessage("Custom playlist ids: " . join(',', @pset), "GREEN", '');
+               $durSec = sprintf("%.1fs", $dur / 10);
+               &ColorMessage("Playlist duration: $durSec", "GREEN", '');
             }
          }
          else {
-            # -p only. Show active preset/playlist.
-            return 1 if (&ShowPreset($WledUrl, \%presetIds, 'CYAN', ''));
+            # p only. Show active preset/playlist.
+            last if (&ShowPreset($WledUrl, \%presetIds, 'CYAN', ''));
          }
       }
-      # ==========
-      elsif ($preset =~ m/^(\d+)$/) {    # User wants a single preset.
-         my $id = $1;
-         if (exists($presetIds{$id})) {
-            if (exists($presetIds{$id}{'plist'})) {
-               &ColorMessage("Playlist ids: $presetIds{$id}{'plist'}", "GREEN", '');
-               &ColorMessage("Playlist dur: $presetIds{$id}{'dur'}", "GREEN", '');
-            }
-            last if (&PostJson(join("/", $WledUrl, "json/state"), qq({"ps": $id})));
-         }
-         else {
-            &ColorMessage("Invalid preset Id: $id", "BRIGHT_RED", '');
-         }
-      }
-      # ==========
-      elsif ($preset =~ m/^b$/i) {           # b with no value
-         # Re-get WLED state data which includes the current brightness setting.
-         return 1 if (&GetUrl(join("/", $WledUrl, 'json', 'state'), \@resp));
-         $s_ref = decode_json(join('', @resp));
-         &ColorMessage("LED brightness is: $s_ref->{'bri'}", "CYAN", '');
-      }
-      elsif ($preset =~ m/^b\s*([\+|\-]*[0-9]+)/i) {   # User wants brightness change.
-         my $val = $1;   my $noSet = 0;
-      
-         # Update parameter value in state working hash.
-         if ($val =~ m/^[\+|\-]/) {
-            $s_ref->{'bri'} += $val;       # relative
-            $s_ref->{'bri'} = 1 if ($s_ref->{'bri'} < 1);
-            $s_ref->{'bri'} = 255 if ($s_ref->{'bri'} > 255);
-         }
-         else {
-            if ($val > 0 and $val < 256) {
-               $s_ref->{'bri'} = $val;     # absolute
-            }
-            else {
-               &ColorMessage("Invalid brightness value: $val", "BRIGHT_RED", '');
-               $noSet = 1;
-            }
-         }
-         if ($noSet == 0) {
-            last if (&PostJson(join("/", $WledUrl, "json/state"), 
-                     qq({"on":true,"bri": $s_ref->{'bri'}})));
-            &ColorMessage("LED brightness set to: $s_ref->{'bri'}", "CYAN", '');
-         }
-      }
-      # ==========
-      elsif ($preset =~ m/^f$/i) {           # Show WLED frame rate.
-         # Show active preset/playlist.
-         return 1 if (&ShowPreset($WledUrl, \%presetIds, 'CYAN', 'nocr'));
-         # Get active fps/power usage.
-         return 1 if (&GetUrl(join("/", $WledUrl, , 'json', 'info'), \@resp));
-         $i_ref = decode_json(join('', @resp));
-         my $fps = $i_ref->{'leds'}{'fps'};
-         my $pwr = sprintf("%.1f", $i_ref->{'leds'}{'pwr'} / 1000);
-         &ColorMessage("  fps: $fps  pwr: $pwr A", "CYAN", '');
-      }
-      # ==========
-      elsif ($preset =~ m/^db$/i) {            # db with no value
-         # Get the WLED configuration data.
-         return 1 if (&GetUrl(join("/", $WledUrl, 'cfg.json'), \@resp));
-         my $c_ref = decode_json(join('', @resp));
-         &ColorMessage("Default LED brightness is: $c_ref->{'def'}{'bri'}", "CYAN", '');
-      }
-      elsif ($preset =~ m/^db\s*([0-9]+)/i) {  # User wants default brightness change.
-         my $val = $1;
-      
-         # Update parameter value in configuration working hash and send to WLED.
-         if ($val > 0 and $val < 256) {
-            last if (&PostJson(join("/", $WledUrl, "json/cfg"), 
-               qq({"def":{"on":true,"bri":$val}})));
-            &ColorMessage("Set default LED brightness to: $val", "CYAN", '');
-         }
-         else {
-            &ColorMessage("Invalid default brightness value: $val", "BRIGHT_RED", '');
-         }
-      }
-      # ==========
-      elsif ($preset =~ m/^dp$/i) {            # dp with no value
-         # Get the WLED configuration data.
-         return 1 if (&GetUrl(join("/", $WledUrl, 'cfg.json'), \@resp));
-         my $c_ref = decode_json(join('', @resp));
-         my $ps = $c_ref->{'def'}{'ps'};
-         if ($ps > 0) {
-            my $pname = $presetIds{$ps}{'name'};
-            &ColorMessage("Power-on-preset is: $ps '$pname'", "CYAN", '');
-         }
-         else {
-            &ColorMessage("Power-on-preset is: 0 'default'", "CYAN", '');
-         }
-      }
-      elsif ($preset =~ m/^dp\s*([0-9]+)/i) {  # User wants power-on-preset change.
-         my $val = $1;
-      
-         # Update parameter value in configuration working hash and send to WLED.
-         if ($val >= 0 and $val < 251) {
-            last if (&PostJson(join("/", $WledUrl, "json/cfg"), 
-               qq({"def":{"on":true,"ps":$val}})));
-            if ($val > 0) {
-               my $pname = $presetIds{$val}{'name'};
-               &ColorMessage("Power-on-preset is: $val '$pname'", "CYAN", '');
-            }
-            else {
-               &ColorMessage("Power-on-preset is: 0 'default'", "CYAN", '');
-            }
-         }
-         else {
-            &ColorMessage("Invalid power-on-preset value: $val", "BRIGHT_RED", '');
-         }
-      }
-      # ==========
       else {
-         &ColorMessage("Invalid entry: '$preset'", "BRIGHT_RED", '');
+         # Process audition mode commands.
+         my $result = &AuditionCmd($WledUrl, \%presetIds, $preset);
+         last if ($result == 1);
+         if ($result == 2) {
+            &ColorMessage("Invalid entry: '$preset'", "BRIGHT_RED", '');
+         }
       }
       sleep 1;
    }
