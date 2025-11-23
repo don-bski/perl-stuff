@@ -1,3 +1,14 @@
+**11-23-2025 - wled-tool v1.6**
+1. The interactive preset audition mode (-i) has been enhanced.
+   - Added the 's' command for changing the effect speed (sx) of the specified segment.
+   - Added the 'i' command for changing the effect intensity (ix) of the specified segment.
+   - The 's' and 'i' commands, without parameters, will show the sx and ix settings for all segments of the active preset.
+   - Added the 'h' command to redisplay the initial audition mode data; WLED version, available presets, and command summary.
+   - Changed the 'p' and 'd' command syntax. Parameters are now expected to be space separated. Multiple presets or durations remain comma seperated.
+   - Reorganized the audition mode code for improved performance, readability, and error handling.
+2. Rewrote the help text (-h) for audition mode. Supported commands are individually detailed.
+3. Corrected some minor issues related to syntax checking of audition mode commands.
+   
 **11-13-2025 - wled-tool v1.5**
 1. The interactive preset audition mode (-i) has been enhanced.
    - The initial header now includes informational data as read from the target WLED instance. This data is similar to what is shown in the WLED GUI->Info page.
