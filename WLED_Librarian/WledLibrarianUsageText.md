@@ -178,7 +178,7 @@ WLED UI by the user. Field:value pairs within the preset JSON link the palette a
 association is used to store the preset, palette, and ledmap JSON data in the WledLibrarian's 
 database.
 
-During import, the preset JSON is checked for a custom palette linkage; `pal:256` through `pal:247` which 
+During import, the preset JSON is checked for a custom palette linkage; `pal:255` through `pal:246` which 
 corresponds to `palette0.json` through `palette9.json` files. These files must be present along with the
 preset.json when an `IMPORT file:` is performed. `IMPORT wled:` will automatically transfer the 
 associated palette data from the WLED instance.
