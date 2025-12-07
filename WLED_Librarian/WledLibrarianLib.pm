@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                          10-05-2025
+# FILE: WledLibrarianLib.pm                                          12-07-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -178,7 +178,13 @@ sub WriteFile {
 # =============================================================================
 sub DateTime {
    my($DateJoin, $TimeJoin, $DatetimeJoin, $Time) = @_;
-   my($sec, $min, $hour, $day, $month, $year) = localtime($Time);
+   my($sec, $min, $hour, $day, $month, $year);
+   if ($Time eq '') {
+      ($sec, $min, $hour, $day, $month, $year) = localtime(time);
+   }
+   else {
+      ($sec, $min, $hour, $day, $month, $year) = localtime($Time);
+   }
    my($date, $time);
 
    $month = $month+1;
@@ -1017,8 +1023,8 @@ sub ShowCmdHelp {
          &ColorMessage("with a preset and saved in the WLED UI by the user. Field:value pairs within the", "WHITE", '');
          &ColorMessage("preset JSON link the palette and ledmap. This association is used to store the", "WHITE", '');
          &ColorMessage("preset, palette, and ledmap JSON data in the WledLibrarian's database.\n", "WHITE", '');
-         &ColorMessage("During import, the preset JSON is checked for a custom palette linkage; pal:256", "WHITE", '');
-         &ColorMessage("through pal:247 which corresponds to palette0.json through palette9.json files.", "WHITE", '');
+         &ColorMessage("During import, the preset JSON is checked for a custom palette linkage; pal:255", "WHITE", '');
+         &ColorMessage("through pal:246 which corresponds to palette0.json through palette9.json files.", "WHITE", '');
          &ColorMessage("These files must be present along with the preset.json when an IMPORT file: is ", "WHITE", '');
          &ColorMessage("performed. IMPORT wled: will automatically transfer the associated palette data", "WHITE", '');
          &ColorMessage("from the WLED instance.\n", "WHITE", '');
@@ -1884,9 +1890,9 @@ sub ParseInput {
 #
 # DESCRIPTION:
 #    This routine loads custom palette data. WLED custom palettes are specified 
-#    as pal:xxx in the preset JSON. Custom palettes are in the range 247-256.
+#    as pal:xxx in the preset JSON. Custom palettes are in the range 255-246.
 #    This cooresponds to files palette0.json through palette9. The palette data
-#    is stored in the specified hash; key 247-256, value JSON text data.
+#    is stored in the specified hash; key 255-246, value JSON text data.
 #
 # CALLING SYNTAX:
 #    $result = &LoadPalettes($Parsed, \%PalData);
@@ -1906,8 +1912,8 @@ sub LoadPalettes {
    my(@data) = ();
    
    &DisplayDebug("LoadPalettes ...");
-   foreach my $pal (256,255,254,253,252,251,250,249,248,247) {
-      my $file = join('', 'palette', abs($pal - 256), '.json');
+   foreach my $pal (255,254,253,252,251,250,249,248,247,246) {
+      my $file = join('', 'palette', abs($pal - 255), '.json');
       if (exists($$Parsed{'file0'})) { 
          my $srcPath = '';
          if ($$Parsed{'file0'} =~ m#/#) {
@@ -2150,7 +2156,7 @@ sub ImportDuplicate {
 #    Table: Palettes - Holds the custom palettes used by the presets.
 #       Palid  - Unique palette Id. Multiple palettes for preset possible. 
 #       Plid   - Lid of preset using this palette.
-#       Plnum  - Palette number; 0 through -9 (256-247).
+#       Plnum  - Palette number; 0 through 9 (255-246).
 #       Pldata - JSON data for this custom palette.
 #
 #    Table: Ledmaps - Holds the custom ledmaps used by the presets.
@@ -2318,15 +2324,15 @@ sub ImportPresets {
       $lastPid = $dbData{'Pid'};   
       
       # Perform Palette table processing. Check all segments for custom palette entries;
-      # range 247-256. If importing direct wled, get the palette data. Otherwise, read 
+      # range 246-255. If importing direct wled, get the palette data. Otherwise, read 
       # the appropriate local file. If neither source is available, insert with no Pldata
       # and display a user message. Lid value links record(s) with preset.
       foreach my $segref (@{ $jsonRef->{$jKey}{'seg'} }) {     # Process each segment.
-         if ($segref->{'pal'} >= 247 and $segref->{'pal'} <= 256) {
+         if ($segref->{'pal'} >= 246 and $segref->{'pal'} <= 255) {
             $dbData{'Plnum'} = $segref->{'pal'};
             $dbData{'Palid'} = 'NULL';                 # Unique DB generated value.
             $dbData{'Plid'} = $dbData{'Kid'};          # New preset record Lid value.
-            unless (%palData) {                        # Load palettes if empty hash.
+            if (!%palData) {                           # Load palettes if empty hash.
                return 1 if (&LoadPalettes($Parsed, \%palData));
             } 
             if (exists($palData{ $dbData{'Plnum'} })) {
@@ -2355,7 +2361,7 @@ sub ImportPresets {
          $dbData{'Mnum'} = $jsonRef->{$jKey}{'ledmap'};
          $dbData{'Mapid'} = 'NULL';                 # Unique DB generated value.
          $dbData{'Mlid'} = $dbData{'Kid'};          # New preset record Lid value.
-         unless (%mapData) {                        # Load palettes if empty hash.
+         if (!%mapData) {                           # Load palettes if empty hash.
             return 1 if (&LoadLedmaps($Parsed, \%mapData));
          } 
          if (exists($mapData{ $dbData{'Mnum'} })) {
@@ -2797,7 +2803,7 @@ sub DisplayPresets {
                &ColorMessage('', "WHITE", '') if ($#pdata >= 0);
                foreach my $rec (@pldata) {
                   my @data = split('\|', $rec);
-                  my $name = join('', 'palette', abs($data[0] - 256));
+                  my $name = join('', 'palette', abs($data[0] - 255));
                   &ColorMessage("$name  $data[0]  $data[1]", 'CYAN', '');
                }
             }

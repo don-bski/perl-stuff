@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ===================================================================================
-# FILE: WledLibrarianDBI.pm                                               10-05-2025
+# FILE: WledLibrarianDBI.pm                                               12-07-2025
 #
 # DESCRIPTION:
 #   This perl module provides SQLite database interfacing functions for the WLED
@@ -152,7 +152,7 @@ sub ColorMessage {
 #    Table: Palettes - Holds the custom palettes used by the presets.
 #       Palid  - Unique palette Id. Multiple palettes for preset possible. 
 #       Plid   - Lid of preset using this palette.
-#       Plnum  - Palette number; 0 through -9 (256-247).
+#       Plnum  - Palette number; 0 through -9 (255-246).
 #       Pldata - JSON data for this custom palette.
 #
 #    Table: Ledmaps - Holds the custom ledmaps used by the presets.
