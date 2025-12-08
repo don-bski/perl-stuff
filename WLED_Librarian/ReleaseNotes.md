@@ -1,8 +1,10 @@
-**12-07-2025** - WledLibrarian v1.1 corrects the following bugs.
+**12-08-2025** - WledLibrarian v1.1 contains the following changes.
 1. Imported palettes were assigned incorrect custom palette Id values in the database. Palette0 - palette9 
-are now correctly numbered; 255 - 246. Any existing database presets that use custom palettes should be
+are now correctly numbered; 255-246. Any existing database presets that use custom palettes should be
 removed and reimported.
 2. The import time stamp value is now computed correctly using the computer's locally set time. 
+3. The `pid:` option has been added to the Import command. This option limits import to only the specified
+preset Ids in the import source. All other presets Ids in the import source are skipped.
 
 **10-05-2025** - WledLibrarian v1.0 adds a DATABASE command for backup and restore of the librarian
 database file. See help text for usage details. The tab key functionality has been extended to 
