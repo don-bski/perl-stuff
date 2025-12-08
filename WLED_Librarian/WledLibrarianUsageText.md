@@ -21,7 +21,7 @@ Commands:
    delete [lid:<i>] [pid:<i>] [tag:<w>] [group:<w>]
    dupl lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [tag:<w>] [group:<w>]]
    edit lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [src:<w>]
-   import [file:<file>] [wled:[<ip>]] [tag:<w>] [group:<w>]
+   import [file:<file>] [wled:[<ip>]] [pid:<i>] [tag:<w>] [group:<w>]
    sort [lid|pid|date|pname|tag|group]:[a|d]
    cfg [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|p]
    database [backup:<dstPath>/[<file>]] [restore:<srcPath>/[<file>]
@@ -160,12 +160,13 @@ enclose the new value in single quotes.<br/>
 Example: `EDIT lid:2 pid:42 pname:'The Answer'`
 
 #### IMPORT command
-`IMPORT file:<file> wled[:<ip>] tag:<w>[,<w>] group:<w>[,<w>]`<br/>
+`IMPORT file:<file> wled[:<ip>] pid:<i>[,<i>] tag:<w>[,<w>] group:<w>[,<w>]`<br/>
 Used to load JSON formatted WLED preset data into the database. The WLED presets
 backup function in the WLED configuration menu can be used to create a file. Tag
-and/or group words can be applied to all presets during import. `tag:new` is
-applied if neither is specified.<br>
-Example: `IMPORT file:presets.json group:xmas`
+and/or group words <w> can be applied to all presets during import. tag:new is
+applied if neither is specified. All import source presets are processed. Use the
+pid: option to limit import to the specified preset Ids.<br>
+Example: `IMPORT file:presets.json pid:3,9,15 group:xmas`
 
 The presets on an active WLED instance can be directly imported over WIFI. The
 above tag/group word rules apply. Specify the IP address if WLED is not using
