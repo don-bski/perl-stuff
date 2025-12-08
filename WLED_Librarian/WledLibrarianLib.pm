@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: WledLibrarianLib.pm                                          12-07-2025
+# FILE: WledLibrarianLib.pm                                          12-08-2025
 #
 # SERVICES: Wled Librarian support code
 #
@@ -540,7 +540,8 @@ sub CheckVarType {
    
    if ($Group =~ m/p/i) {
       my(%bool) = ('on'=>1,'rev'=>1,'frz'=>1,'r'=>1,'sel'=>1,'mi'=>1,'nl.on'=>1,
-         'rY'=>1,'mY'=>1,'tp'=>1,'send'=>1,'sgrp'=>1,'rgrp'=>1,'nn'=>1,'live'=>1);
+         'rY'=>1,'mY'=>1,'tp'=>1,'send'=>1,'sgrp'=>1,'rgrp'=>1,'nn'=>1,'live'=>1,
+         'o2'=>1);
       my(%nmbr) = ('id'=>1,'start'=>1,'stop'=>1,'grp'=>1,'spc'=>1,'of'=>1,'bri'=>1,
          'col'=>1,'fx'=>1,'sx'=>1,'ix'=>1,'pal'=>1,'c1'=>1,'c2'=>1,'c3'=>1,'set'=>1,
          'o1'=>1,'o2'=>1,'o3'=>1,'si'=>1,'m12'=>1,'cct'=>1,'transition'=>1,'tt'=>1,
@@ -1008,12 +1009,14 @@ sub ShowCmdHelp {
          &ColorMessage("DUPL lid:17 pid:67 pname:TwinkleRedGrn tag:xmas", "BRIGHT_WHITE", '');
       }
       elsif ($cmd =~ m/^i[mport]*/) {
-         &ColorMessage("IMPORT file:<file> wled[:<ip>] tag:<w>[,<w>] group:<w>[,<w>]", "BRIGHT_WHITE", '');
+         &ColorMessage("IMPORT file:<file> wled[:<ip>] [pid:<i>[,<i>]] tag:<w>[,<w>] group:<w>[,<w>]", "BRIGHT_WHITE", '');
          &ColorMessage("Used to load JSON formatted WLED preset data into the database. The WLED presets", "WHITE", '');
          &ColorMessage("backup function in the WLED configuration menu can be used to create a file. Tag", "WHITE", '');
          &ColorMessage("and/or group words <w> can be applied to all presets during import. tag:new is", "WHITE", '');
-         &ColorMessage("applied if neither is specified. e.g. ", "WHITE", 'nocr');
-         &ColorMessage("IMPORT file:presets.json group:xmas\n", "BRIGHT_WHITE", '');
+         &ColorMessage("applied if neither is specified. All import source presets are processed. Use the", "WHITE", '');
+         &ColorMessage("pid: option to limit import to the specified preset Ids.", "WHITE", '');
+         &ColorMessage("e.g. ", "WHITE", 'nocr');
+         &ColorMessage("IMPORT file:presets.json pid:3,9,15 group:xmas\n", "BRIGHT_WHITE", '');
          &ColorMessage("The presets on an active WLED instance can be directly imported over WIFI. The", "WHITE", '');
          &ColorMessage("above tag/group word rules apply. Specify the IP address if WLED is not using", "WHITE", '');
          &ColorMessage("the 4.3.2.1 default. e.g. ", "WHITE", 'nocr');
@@ -1161,7 +1164,7 @@ sub DisplayHeadline {
    &ColorMessage("   delete [lid:<i>] [pid:<i>] [tag:<w>] [group:<w>]", "WHITE", '');
    &ColorMessage("   dupl lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [tag:<w>] [group:<w>]]", "WHITE", '');
    &ColorMessage("   edit lid:<i> [pid:<i>] [pname:<n>] [qll:<w>] [src:<w>]", "WHITE", '');
-   &ColorMessage("   import [file:<file>] [wled:[<ip>]] [tag:<w>] [group:<w>]", "WHITE", '');
+   &ColorMessage("   import [file:<file>] [wled:[<ip>]] [pid:<i>] [tag:<w>] [group:<w>]", "WHITE", '');
    &ColorMessage("   sort [lid|pid|date|pname|tag|group]:[a|d]", "WHITE", '');
    &ColorMessage("   cfg [wled:<ip>] [pop:<i>] [bri:<i>] [info[:c|p]", "WHITE", '');
    &ColorMessage("   database [backup:<dstPath>/[<file>]] [restore:<srcPath>/[<file>]", "WHITE", '');
@@ -1667,7 +1670,7 @@ sub ParseInput {
 
    # These hashes define the supported commands and the options that may be used.
    # First command position and second.
-   my(%validCmd1) = ('import' => 'file,wled,tag,group', 'help' => '', 'quit' => '',
+   my(%validCmd1) = ('import' => 'file,wled,pid,tag,group', 'help' => '', 'quit' => '',
       'show' => 'tag,group,date,pid,pname,type,lid,pdata,qll,src,pal,map,,wled', 
       'delete' => 'lid,pid,tag,group', 'dupl' => 'lid,pid,pname,qll,tag,group',
       'edit' => 'lid,pid,pname,qll,src', 'sort' => 'tag,group,date,pid,pname,lid',
@@ -2182,8 +2185,8 @@ sub ImportPresets {
    my($Dbh, $Parsed) = @_;
    my($srcFile, $tstData, $lastPid);
    
-   &DisplayDebug("ImportPresets file: '$$Parsed{'file0'}'  tag: '$$Parsed{'tag0'}'" .
-      "  group: '$$Parsed{'group0'}'  wled: '$$Parsed{'wled0'}'");
+   &DisplayDebug("ImportPresets file: '$$Parsed{'file0'}'  pid: '$$Parsed{'pid0'}'" .
+      "  tag: '$$Parsed{'tag0'}'  group: '$$Parsed{'group0'}'  wled: '$$Parsed{'wled0'}'");
    my (@data) = (); 
    if (exists($$Parsed{'file0'})) { 
       if (-e $$Parsed{'file0'}) {
@@ -2254,8 +2257,13 @@ sub ImportPresets {
    # value which is saved in $dbData{'Kid'} and used with the subsequent 
    # Keywords insert. The facilitates data JOIN that is used with SELECT 
    # database queries.
+   my @pidImport = ();
+   @pidImport = split(',', $$Parsed{'pid0'}) if (exists($$Parsed{'pid0'}));
    foreach my $jKey (sort {$a <=> $b} keys(%$jsonRef)) {
       next if ($jKey eq '0');   # Don't import preset 0;
+      if ($#pidImport >= 0) {   # User only wants certain preset ids?
+         next unless (grep(/^$jKey$/, @pidImport));
+      }
       $dbData{'Lid'} = 'NULL';
       $dbData{'Pid'} = $jKey;
       $dbData{'Pname'} = $jsonRef->{$jKey}{'n'};

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ===================================================================================
-# FILE: WledLibrarianDBI.pm                                               12-07-2025
+# FILE: WledLibrarianDBI.pm                                               12-08-2025
 #
 # DESCRIPTION:
 #   This perl module provides SQLite database interfacing functions for the WLED
