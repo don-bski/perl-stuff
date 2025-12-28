@@ -1,3 +1,8 @@
+**12-28-2025 - wled-tool v1.7**
+A confirmation prompt is now presented to the user for CLI options that will change either the WLED 
+instance (restore operation) or an existing file (backup operation). This prompt can be suppressed 
+by the -y option which is equivalent to a 'yes' user response.
+
 **11-23-2025 - wled-tool v1.6**
 1. The interactive preset audition mode (-i) has been enhanced.
    - Added the 's' command for changing the effect speed (sx) of the specified segment.
