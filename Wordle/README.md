@@ -9,11 +9,11 @@ With respect to character graphics, considerable time was spent in making the
 program functional in linux and windows environments. Linux uses UTF8 characters
 for drawing boxes around the letters. In windows, code page CP437 characters 
 are used. Couldn't get UTF8 to work with strawberry perl though that effort 
-is ongoing. 
+is still ongoing. 
 
-In windows, an escape sequence is needed to tell Win32::Console::ANSI that the
+In windows, an escape sequence `\e(437X` is needed to tell Win32::Console::ANSI that the
 CP437 characters are used. See https://bribes.org/perl/wANSIConsole.html for 
-details. `\e(437X`. This took more time than I care to admit to figure out. For an 
+details. This took more time than I care to admit to figure out. For an 
 additional environmental workaround, the startup `-a` option can be used 
 to disable box drawing. Use the `-2` option for double line letter boxes.
 
@@ -24,4 +24,4 @@ as a target word. Both files must be located with the program file. After
 the first program run, the file `wordle-stats.txt` will be created to hold 
 the game play statistics.
 
-<img src="wordle.png" alt="screenshot" width="580"/>
+<img src="wordle.png" alt="screenshot" width="500"/>
