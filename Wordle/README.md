@@ -24,4 +24,4 @@ as a target word. Both files must be located with the program file. After
 the first program run, the file `wordle-stats.txt` will be created to hold 
 the game play statistics.
 
-<img src="wordle.png" alt="screenshot" width="580"/>
+<img src="wordle.png" alt="screenshot" width="550"/>
