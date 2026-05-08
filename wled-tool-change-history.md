@@ -1,6 +1,7 @@
 **5-08-2026 - wled-tool v1.8**</br>
-Corrected issue with improper file check in PostUrl. Updated code for better compliance with general
-perl coding practices provided by strict and warning directives.
+- Corrected issue with improper file check in PostUrl.
+- Missing section key in backup file now results in a warning message instead of program abort.
+- Updated code for better compliance with general perl coding practices provided by strict and warning directives.
 
 **12-28-2025 - wled-tool v1.7**</br>
 A confirmation prompt is now presented to the user for CLI options that will change either the WLED 
