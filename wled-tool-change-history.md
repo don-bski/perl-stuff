@@ -1,3 +1,7 @@
+**5-08-2026 - wled-tool v1.8**
+Corrected issue with improper file check in PostUrl. Updated code for better compliance with general
+perl coding practices provided by strict and warning directives.
+
 **12-28-2025 - wled-tool v1.7**
 A confirmation prompt is now presented to the user for CLI options that will change either the WLED 
 instance (restore operation) or an existing file (backup operation). This prompt can be suppressed 
