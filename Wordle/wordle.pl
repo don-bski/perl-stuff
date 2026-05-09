@@ -8,8 +8,8 @@
 #   This program is a perl based adaptation of the word guessing game Wordle.
 #   It is run from the terminal/command line and uses ANSI color sequences to
 #   color the letter clues that are output after each guess. Coded and debugged
-#   using Linux Mint 22.3, Windows 7, and, perl v5.40. Coded as an exercise in
-#   ANSI color, character graphics, and cross-platform compatibility.
+#   using Linux Mint 22.3, Windows 7, and, perl v5.40. Coded as an exercise 
+#   in ANSI color, character graphics, and cross-platform compatibility.
 #
 #   With respect to character graphics, considerable time was spent in making 
 #   the program functional in linux and windows environments. Linux uses UTF8
@@ -28,7 +28,12 @@
 #   'wordle-clue-list.txt' contains words that are valid input but not selected
 #   as a target word. Both files must be located with the program file.
 #
-# PERL VERSION: v5.40
+# REVISION HISTORY:
+#   v0.1   05-07-2026   Initial release.
+#   v0.2   05-09-2026   Reworked ProcessGuess logic and used letter display. 
+#                       Verified program operation in Windows 11 and perl v5.42.
+#
+# PERL VERSION: v5.42
 #
 # ==============================================================================
 use strict;
@@ -64,7 +69,7 @@ my $ClueFile = 'wordle-clue-list.txt';
 my $StatsFile = 'wordle-stats.txt';
 
 # Check for command line options.
-my ($NoBox, $Boxline) = (0, 1);
+my ($NoBox, $Boxline, $Debug) = (0, 1, 0);
 foreach my $arg (@ARGV) {
    $NoBox = 1 if ($arg =~ m/^-a$/);      # Process CLI -a option.
    $Boxline = 2 if ($arg =~ m/^-2$/);    # Process CLI -2 option.
@@ -276,28 +281,41 @@ sub LoadWorkingData {
 # =============================================================================
 sub ProcessGuess {
    my($GuessHash, $GuessIdx, $Word, $Guess, $UsedLetters) = @_;
-   my @colors = ();   my($wChr, $gChr, $wCnt, $mCnt);
-   my $matched = '';
-   
-   for (my $x = 0; $x < length($Word); $x++) {
-      $wChr = substr($Word, $x, 1);         # Answer word character
-      $gChr = substr($Guess, $x, 1);        # Guess word character
-      $wCnt = () = $Word =~ m/$gChr/g;      # Times gChr occurs in $Word
-      $mCnt = () = $matched =~ m/$gChr/g;   # Times gChr already guessed
-      if ($wChr eq $gChr) {
-         push (@colors, 'BRIGHT_GREEN');
+   my @colors = ('WHITE','WHITE','WHITE','WHITE','WHITE');   
+   my($wChr, $gChr);
+
+   # Set matching letters green.   
+   for (my $x = 0; $x < length($Guess); $x++) {
+      if (substr($Word, $x, 1) eq substr($Guess, $x, 1)) {
+         $colors[$x] = 'BRIGHT_GREEN';
+         $gChr = substr($Guess, $x, 1);          # Guess word character
          $$UsedLetters{$gChr} = 'BRIGHT_GREEN';
-         $matched = join('', $matched, $gChr);
+         substr($Word, $x, 1) = '-';             # Remove from further checks.
+         substr($Guess, $x, 1) = '-';            # Mark guess letter used.
       }
-      elsif ($Word =~ m/$gChr/ and $mCnt < $wCnt) {                  
-         push (@colors, 'BRIGHT_YELLOW');
-         $$UsedLetters{$gChr} = 'BRIGHT_YELLOW';
-         $matched = join('', $matched, $gChr);
+   }
+   
+   # Set mispositioned letters to yellow.   
+   for (my $x = 0; $x < length($Guess); $x++) {
+      $gChr = substr($Guess, $x, 1);             # Guess word character
+      next if ($gChr eq '-');
+      for (my $y = 0; $y < length($Word); $y++) {
+         $wChr = substr($Word, $y, 1);           # Answer word character
+         if ($wChr eq $gChr) {
+            substr($Word, $y, 1) = '-';          # Remove from further checks.
+            substr($Guess, $x, 1) = '-';         # Mark guess letter used.
+            $colors[$x] = 'BRIGHT_YELLOW';
+            $$UsedLetters{$gChr} = 'BRIGHT_YELLOW';
+            last;
+         }
       }
-      else {
-         push (@colors, 'WHITE');
-         $$UsedLetters{$gChr} = 'BRIGHT_BLACK';
-      }
+   }
+
+   # Set unused letters to gray.   
+   for (my $x = 0; $x < length($Guess); $x++) {
+      $gChr = substr($Guess, $x, 1);             # Guess word character
+      next if ($gChr eq '-' or $$UsedLetters{$gChr} ne 'WHITE');
+      $$UsedLetters{$gChr} = 'BRIGHT_BLACK';
    }
    @{ $$GuessHash{$GuessIdx}{'color'} } = @colors;
    return 0;
