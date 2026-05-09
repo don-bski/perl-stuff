@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wordle.pl                                                     5-07-2026
+# FILE: wordle.pl                                                     5-09-2026
 #
 # SERVICES: Wordle Word Guess Game 
 #
@@ -59,7 +59,6 @@ my %StatsHash = ();
 my @WordList = ();     # Words used for answer.
 my @ClueList = ();     # Words permitted as input guesses.
 
-my $GuessMax = 6;
 my $WordFile = 'wordle-word-list.txt';
 my $ClueFile = 'wordle-clue-list.txt';
 my $StatsFile = 'wordle-stats.txt';
@@ -99,7 +98,10 @@ foreach my $letter ('A'..'Z') {
    $UsedLetters{$letter} = 'WHITE';
 }
 
+# ----------
+# Main game play..
 my $guessCnt = 1;
+my $GuessMax = 6;
 my $guess;
 while ($guessCnt <= $GuessMax) {
    &ColorMsg("Guess $guessCnt of $GuessMax or q to quit. -> ",'WHITE','nocr');
@@ -126,6 +128,7 @@ while ($guessCnt <= $GuessMax) {
    $guessCnt++;
 }
 
+# ----------
 # Show closing information.
 if ($guess =~ m/^q$/i or $guess =~ m/^e$/i) {
    &ColorMsg("Word was: ",'WHITE','nocr');
@@ -140,18 +143,24 @@ elsif ($guessCnt > $GuessMax) {
 }
 exit(1) if (&DisplayGameStats(\%StatsHash));
 
+# ----------
 # Save game statistics.
-unlink $StatsFile if (-e $StatsFile);
+my $tmpFile = $StatsFile;
+$tmpFile =~ s/(\.txt)$/_tmp$1/;
 my $fh;
-if (open($fh, '>', $StatsFile)) {
+if (open($fh, '>', $tmpFile)) {
    foreach my $key (sort keys(%StatsHash)) {
       unless (print $fh "$key $StatsHash{$key}\n") {
-         &ColorMsg("Error writing file: $StatsFile - $!",'BRIGHT_RED','');
+         &ColorMsg("Error writing file: $tmpFile - $!",'BRIGHT_RED','');
          close($fh);
          exit(1);
       } 
    }
    close($fh);
+   if (-e $tmpFile) {
+      unlink $StatsFile;
+      rename $tmpFile, $StatsFile;
+   }
 }
 else {
    &ColorMsg("Error opening file: $StatsFile - $!",'BRIGHT_RED','');
@@ -245,10 +254,9 @@ sub LoadWorkingData {
 #    This routine processes the specified %GuessHash entry. It adds the 'color' 
 #    sub-key based on analysis of the target word and guess word. The yellow
 #    indication, letter used but wrong position, is limited by the number of 
-#    times the letter is used in the answer word. With word with one G in the
-#    target and guess word containing two G's, results in the 2nd G guess 
-#    showing as unused (white) instead of used (yellow). This behavior is
-#    consistent with the online game.
+#    times the letter is used in the answer word. $Word with one G and $Guess
+#    containing two G's results in the 2nd G in $Guess showing as unused (white)
+#    instead of used (yellow). This behavior is consistent with the online game.
 #
 # CALLING SYNTAX:
 #    $result = &ProcessGuess(\%GuessHash, $GuessIdx, $Word, $Guess, \%UsedLetters);
@@ -302,7 +310,7 @@ sub ProcessGuess {
 #    Displays the game play instructions.
 #
 # CALLING SYNTAX:
-#    $result = &DisplayInstructions(\%GuessHash, $Boxline, $NoUtf8);
+#    $result = &DisplayInstructions(\%GuessHash, $Boxline, $NoBox);
 #
 # ARGUMENTS:
 #    $GuessHash       Pointer to guess hash.
@@ -321,7 +329,8 @@ sub DisplayInstructions {
    &ColorMsg("\n   - - -  ",'BRIGHT_MAGENTA','nocr');
    &ColorMsg("P E R L   W O R D L E",'BRIGHT_CYAN','nocr');
    &ColorMsg("  - - -\n",'BRIGHT_MAGENTA','');
-   &ColorMsg("Guess the WORDLE in six tries. Each guess must be a valid five",'WHITE','');
+   &ColorMsg("Guess the WORDLE in six tries. Each guess must be a valid five",
+             'WHITE','');
    &ColorMsg("letter word. After each guess, the color of the letters will",'WHITE','');
    &ColorMsg("change to show how close your guess is to the word.\n",'WHITE','');
    &ColorMsg("Example:",'WHITE','');
@@ -358,7 +367,6 @@ sub DisplayUsedLetters {
    
    &ColorMsg('','WHITE','');
    foreach my $keyRow (@keyboard) {
-      my @row = ();
       my @rowKeys = split(//, $keyRow);
       my $cnt = splice(@rowKeys, 0, 1);
       my $row = ' ' x $cnt;
@@ -379,8 +387,8 @@ sub DisplayUsedLetters {
 # FUNCTION:  DisplayGuessHash
 #
 # DESCRIPTION:
-#    Displays the letters in the specified hash using unicode box drawing 
-#    characters. Te primary hash key is the guess number. Sub-arrays 'letter' 
+#    Displays the letters in the specified hash using optional box drawing 
+#    characters. The primary hash key is the guess number. Sub-arrays 'letter' 
 #    and 'color' are present in previous guesses. The 'ltr' array holds the
 #    guessed letter for the position. The 'color' array holds the color for
 #    the box and letter.
@@ -388,7 +396,6 @@ sub DisplayUsedLetters {
 #    Some additional code magic tells Win32::Console::ANSI that extended
 #    characters, in this case code page 437 box drawing, are in use. Escape
 #    sequence '\e(437X'. See https://bribes.org/perl/wANSIConsole.html
-#    This took more time than I care to admit to figure out.
 #
 # CALLING SYNTAX:
 #    $result = &DisplayGuessHash(\%GuessHash, $Boxline, $NoBox);
@@ -412,12 +419,12 @@ sub DisplayGuess {
 
    # The following hash defines the box drawing characters. Single and double
    # line sets for CP437 and uft8.
-   my %boxChar = ('w1T' => "\x{DA}\x{C4}\x{C4}\x{C4}\x{BF} ",
-                  'w1L' => "\x{B3} %%% \x{B3} ",
-                  'w1B' => "\x{C0}\x{C4}\x{C4}\x{C4}\x{D9} ",
-                  'w2T' => "\x{C9}\x{CD}\x{CD}\x{CD}\x{BB} ",
-                  'w2L' => "\x{BA} %%% \x{BA} ",
-                  'w2B' => "\x{C8}\x{CD}\x{CD}\x{CD}\x{BC} ",
+   my %boxChar = ('c1T' => "\x{DA}\x{C4}\x{C4}\x{C4}\x{BF} ",
+                  'c1L' => "\x{B3} %%% \x{B3} ",
+                  'c1B' => "\x{C0}\x{C4}\x{C4}\x{C4}\x{D9} ",
+                  'c2T' => "\x{C9}\x{CD}\x{CD}\x{CD}\x{BB} ",
+                  'c2L' => "\x{BA} %%% \x{BA} ",
+                  'c2B' => "\x{C8}\x{CD}\x{CD}\x{CD}\x{BC} ",
                   'u1T' => "\x{250C}\x{2500}\x{2500}\x{2500}\x{2510} ",
                   'u1L' => "\x{2502} %%% \x{2502} ",
                   'u1B' => "\x{2514}\x{2500}\x{2500}\x{2500}\x{2518} ",
@@ -446,7 +453,7 @@ sub DisplayGuess {
          }
          else {                    # Box drawing characters around letter.
             if ($^O =~ m/Win/i) {  # Use code page 437 extended characters.
-               $key = ($Boxline == 2) ? 'w2' : 'w1';
+               $key = ($Boxline == 2) ? 'c2' : 'c1';
             }
             else {                 # Use unicode characters.
                $key = ($Boxline == 2) ? 'u2' : 'u1';
