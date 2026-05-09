@@ -2,7 +2,7 @@
 This program is a perl based adaptation of the word guessing game Wordle.
 It is run from the terminal/command line and uses ANSI color sequences to
 color the letter clues that are output after each guess. Coded and debugged
-using Linux Mint 22.3, Windows 7, and, perl v5.40. Coded as an exercise in
+using Linux Mint 22.3, Windows 7&11, and perl v5.40. Coded as an exercise in
 ANSI color, character graphics, and cross-platform compatibility.
 
 With respect to character graphics, considerable time was spent in making the 
