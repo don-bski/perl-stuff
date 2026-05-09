@@ -11,9 +11,9 @@ for drawing boxes around the letters. In windows, code page CP437 characters
 are used. Couldn't get UTF8 to work with windows Strawberry perl though that 
 effort is still ongoing. 
 
-In windows, an escape sequence `\e(437X` is needed to tell Win32::Console::ANSI that the
+In windows, an escape sequence `\e(437X` is needed to tell Win32::Console::ANSI that
 CP437 characters are used. See https://bribes.org/perl/wANSIConsole.html for 
-details. This took more time than I care to admit to figure out. For an 
+details. This took more time than I care to admit to work out. For an 
 additional environmental workaround, the startup `-a` option can be used 
 to disable box drawing. Use the `-2` option for double line letter boxes.
 
