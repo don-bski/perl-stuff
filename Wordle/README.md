@@ -8,8 +8,8 @@ ANSI color, character graphics, and cross-platform compatibility.
 With respect to character graphics, considerable time was spent in making the 
 program functional in linux and windows environments. Linux uses UTF8 characters
 for drawing boxes around the letters. In windows, code page CP437 characters 
-are used. Couldn't get UTF8 to work with strawberry perl though that effort 
-is still ongoing. 
+are used. Couldn't get UTF8 to work with windows Strawberry perl though that 
+effort is still ongoing. 
 
 In windows, an escape sequence `\e(437X` is needed to tell Win32::Console::ANSI that the
 CP437 characters are used. See https://bribes.org/perl/wANSIConsole.html for 
