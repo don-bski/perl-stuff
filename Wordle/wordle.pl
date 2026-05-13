@@ -8,8 +8,11 @@
 #   This program is a perl based adaptation of the word guessing game Wordle.
 #   It is run from the terminal/command line and uses ANSI color sequences to
 #   color the letter clues that are output after each guess. Coded and debugged
-#   using Linux Mint 22.3, Windows 7, and, perl v5.40. Coded as an exercise 
-#   in ANSI color, character graphics, and cross-platform compatibility.
+#   using Linux Mint 22.3, Windows 7/11, and perl v5.40. Coded as an exercise 
+#   in ANSI color, character graphics, and cross-platform compatibility. This 
+#   code has been tested as a standalone Windows executable using Strawberry 
+#   perl PAR::Packer module. Use the following command to build the windows 
+#   executable.  pp -o wordle.exe wordle.pl
 #
 #   With respect to character graphics, considerable time was spent in making 
 #   the program functional in linux and windows environments. Linux uses UTF8
