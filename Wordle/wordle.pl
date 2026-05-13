@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wordle.pl                                                     5-09-2026
+# FILE: wordle.pl                                                     5-13-2026
 #
 # SERVICES: Wordle Word Guess Game 
 #
@@ -32,6 +32,7 @@
 #   v0.1   05-07-2026   Initial release.
 #   v0.2   05-09-2026   Reworked ProcessGuess logic and used letter display. 
 #                       Verified program operation in Windows 11 and perl v5.42.
+#   v0.3   05-13-2026   Added exit confirmation for Windows environments.
 #
 # PERL VERSION: v5.42
 #
@@ -169,6 +170,19 @@ if (open($fh, '>', $tmpFile)) {
 }
 else {
    &ColorMsg("Error opening file: $StatsFile - $!",'BRIGHT_RED','');
+}
+
+# The following exit code is run in windows environments to differentiate
+# between a CMD window CLI launch of the program and launch initiated by a
+# double click of the wordle.pl file. The former defines a $ENV{'PROMPT'} 
+# variable, the latter does not. Tested in Windows 7 and 11. This results 
+# in a 'Press Enter key to exit' message giving the user an opportunity to
+# view the game score and statistics before the CMD window is closed.
+if ($^O =~ m/Win/i) {
+   unless (exists($ENV{'PROMPT'})) {
+      &ColorMsg("Press Enter key to exit.",'WHITE','');
+      chomp($guess = <STDIN>);
+   }
 }
 exit(0);
 
