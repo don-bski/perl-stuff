@@ -15,7 +15,7 @@ In windows, an escape sequence `\e(437X` is needed to tell Win32::Console::ANSI 
 CP437 characters are used. See https://bribes.org/perl/wANSIConsole.html for 
 details. For an additional environmental workaround, the startup `-a` option 
 can be used to disable box drawing. Use the `-2` option for double line letter 
-boxes. Use the -s option to display game stats and exit without game play.
+boxes. Use the `-s` option to display game stats and exit without game play.
 
 The file `wordle-word-list.txt` contains the valid words used by the program.
 A random word is selected from the file during program start. The file
