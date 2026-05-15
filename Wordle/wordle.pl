@@ -1,30 +1,30 @@
 #!/usr/bin/perl
 # ==============================================================================
-# FILE: wordle.pl                                                     5-13-2026
+# FILE: wordle.pl                                                     5-15-2026
 #
-# SERVICES: Wordle Word Guess Game 
+# SERVICES: Wordle 5 Letter Word Guess Game 
 #
 # DESCRIPTION:
 #   This program is a perl based adaptation of the word guessing game Wordle.
 #   It is run from the terminal/command line and uses ANSI color sequences to
 #   color the letter clues that are output after each guess. Coded and debugged
-#   using Linux Mint 22.3, Windows 7/11, and perl v5.40. Coded as an exercise 
-#   in ANSI color, character graphics, and cross-platform compatibility. This 
-#   code has been tested as a standalone Windows executable using Strawberry 
-#   perl PAR::Packer module. Use the following command to build the windows 
-#   executable.  pp -o wordle.exe wordle.pl
+#   using Linux Mint 22.3, Windows 7/11, and Strawberry perl v5.42. Coded as an
+#   exercise in ANSI color, character graphics, and cross-platform compatibility.
+#   This code has also been tested as a standalone Windows executable using the
+#   Strawberry perl PAR::Packer module. Build command: pp -o wordle.exe wordle.pl
 #
 #   With respect to character graphics, considerable time was spent in making 
 #   the program functional in linux and windows environments. Linux uses UTF8
 #   characters for drawing boxes around the letters. In windows, code page 
-#   CP437 characters are used. Couldn't get UTF8 to work with strawberry perl
-#   though that effort is ongoing. 
+#   CP437 characters are used. Couldn't get UTF8 to work with Strawberry perl
+#   though that effort is incomplete. 
 #
 #   In windows, an escape sequence is needed to tell Win32::Console::ANSI that
 #   the CP437 characters are used. See https://bribes.org/perl/wANSIConsole.html  
-#   '\e(437X'. This took more time than I care to admit to figure out. For an 
-#   additional environmental workaround, the startup -a option can be used to
-#   disable box drawing. Use the -2 option for double line letter boxes.
+#   '\e(437X'. An obscure search revealed this bit of information. For an 
+#   additional environment workaround, the startup -a option will disable box
+#   drawing. Use the -2 option for double line letter boxes. Use the -s option
+#   to display current game stats and exit without game play.
 #
 #   The file 'wordle-word-list.txt' contains the valid words used by the program.
 #   A random word is selected from the file during program start. The file
@@ -36,6 +36,8 @@
 #   v0.2   05-09-2026   Reworked ProcessGuess logic and used letter display. 
 #                       Verified program operation in Windows 11 and perl v5.42.
 #   v0.3   05-13-2026   Added exit confirmation for Windows environments.
+#   v0.4   05-15-2026   Added -s option. Refactored exit logic for program launch
+#                       using Windows double-click.
 #
 # PERL VERSION: v5.42
 #
@@ -73,16 +75,19 @@ my $ClueFile = 'wordle-clue-list.txt';
 my $StatsFile = 'wordle-stats.txt';
 
 # Check for command line options.
-my ($NoBox, $Boxline, $Debug) = (0, 1, 0);
+my ($NoBox, $Boxline, $StatsOnly) = (0, 1, 0);
 foreach my $arg (@ARGV) {
    $NoBox = 1 if ($arg =~ m/^-a$/);      # Process CLI -a option.
+   $StatsOnly = 1 if ($arg =~ m/^-s$/);  # Process CLI -s option.
    $Boxline = 2 if ($arg =~ m/^-2$/);    # Process CLI -2 option.
 }
 
 # ----------
 # Load the working word data and previous statistics.
-exit(1) if (&LoadWorkingData(\@WordList, \@ClueList, \%StatsHash, 
-                             $WordFile, $ClueFile, $StatsFile));
+if (&LoadWorkingData(\@WordList, \@ClueList, \%StatsHash, 
+                     $WordFile, $ClueFile, $StatsFile)) {
+   exit( &WaitForWinCr(1) );
+}
 
 if (scalar %StatsHash == 0) {  # Initialize stats if no previous.
    foreach my $stat ('Game Score:','Avg Score:','Games Won:','Games Lost:', 
@@ -93,8 +98,17 @@ if (scalar %StatsHash == 0) {  # Initialize stats if no previous.
 }   
 
 # ----------
+# Show user requested game statistics and exit.
+if ($StatsOnly == 1) {
+   &DisplayGameStats(\%StatsHash);
+   exit( &WaitForWinCr(0) );
+}
+
+# ----------
 # Display program usage.
-exit(1) if (&DisplayInstructions(\%GuessHash, $Boxline, $NoBox));
+if (&DisplayInstructions(\%GuessHash, $Boxline, $NoBox)) {
+   exit( &WaitForWinCr(1) );
+}
 
 # ----------
 # Randomly select a word.
@@ -124,10 +138,20 @@ while ($guessCnt <= $GuessMax) {
       next;
    }
    @{ $GuessHash{$guessCnt}{'letter'} } = split(//, $guess);
-   exit(1) if (&ProcessGuess(\%GuessHash, $guessCnt, $Word, $guess, \%UsedLetters));
-   exit(1) if (&DisplayGuess(\%GuessHash, $Boxline, $NoBox));   
-   exit(1) if (&DisplayUsedLetters(\%UsedLetters));
-   if ($guess eq $Word) {
+   
+   # Process guess and display.
+   if (&ProcessGuess(\%GuessHash, $guessCnt, $Word, $guess, \%UsedLetters)) {
+      exit( &WaitForWinCr(1) );
+   }
+   if (&DisplayGuess(\%GuessHash, $Boxline, $NoBox)) {
+      exit( &WaitForWinCr(1) );
+   }   
+   if (&DisplayUsedLetters(\%UsedLetters)) {
+      exit( &WaitForWinCr(1) );
+   }
+   
+   # If word is guessed, display compliment message and exit loop.
+   if ($guess eq $Word) {   
       &UpdateGameStats(\%StatsHash, $guessCnt, 'win');
       my $compliment = "$Compliment{$guessCnt}!";
       my $indent = ' ' x (17 - int(length($compliment)/2));
@@ -142,7 +166,7 @@ while ($guessCnt <= $GuessMax) {
 if ($guess =~ m/^q$/i or $guess =~ m/^e$/i) {
    &ColorMsg("Word was: ",'WHITE','nocr');
    &ColorMsg($Word,'BRIGHT_CYAN','');
-   exit(0);
+   exit( &WaitForWinCr(0) );
 }   
 elsif ($guessCnt > $GuessMax) {
    my $spc = ' ' x 10;
@@ -150,7 +174,9 @@ elsif ($guessCnt > $GuessMax) {
    &ColorMsg("$Word\n",'BRIGHT_CYAN','');
    &UpdateGameStats(\%StatsHash, $GuessMax, 'lose');
 }
-exit(1) if (&DisplayGameStats(\%StatsHash));
+if (&DisplayGameStats(\%StatsHash)) {
+   exit( &WaitForWinCr(1) );
+}
 
 # ----------
 # Save game statistics.
@@ -162,7 +188,7 @@ if (open($fh, '>', $tmpFile)) {
       unless (print $fh "$key $StatsHash{$key}\n") {
          &ColorMsg("Error writing file: $tmpFile - $!",'BRIGHT_RED','');
          close($fh);
-         exit(1);
+         exit( &WaitForWinCr(1) );
       } 
    }
    close($fh);
@@ -175,19 +201,7 @@ else {
    &ColorMsg("Error opening file: $StatsFile - $!",'BRIGHT_RED','');
 }
 
-# The following exit code is run in windows environments to differentiate
-# between a CMD window CLI launch of the program and launch initiated by a
-# double click of the wordle.pl file. The former defines a $ENV{'PROMPT'} 
-# variable, the latter does not. Tested in Windows 7 and 11. This results 
-# in a 'Press Enter key to exit' message giving the user an opportunity to
-# view the game score and statistics before the CMD window is closed.
-if ($^O =~ m/Win/i) {
-   unless (exists($ENV{'PROMPT'})) {
-      &ColorMsg("Press Enter key to exit.",'WHITE','');
-      chomp($guess = <STDIN>);
-   }
-}
-exit(0);
+exit( &WaitForWinCr(0) );
 
 # =============================================================================
 # FUNCTION:  LoadWorkingData
@@ -673,4 +687,42 @@ sub ColorMsg {
       print STDOUT $Message, "$cr";
    }
    return 0;
+}
+
+# =============================================================================
+# FUNCTION:  WaitForWinCr
+#
+# DESCRIPTION:
+#   This routine handles program exit when Windows wordle.pl double-click is
+#   used to start the program. The user prompt 'Press Enter key to exit' will
+#   be presented giving the user an opportunity to view the game score and 
+#   statistics before the CMD window is closed.
+#
+#   The code differentiates between a CMD window CLI launch of the program and
+#   launch initiated by a double click of the wordle.pl file. The former defines
+#   a $ENV{'PROMPT'} variable, the latter does not. Tested in Windows 7 and 11.
+#  
+# CALLING SYNTAX:
+#    $result = &WaitForWinCr($Code);
+#
+# ARGUMENTS:
+#    $Code            Optional value to return; default 0;
+#
+# RETURNED VALUES:
+#    0 = Success,  1 = Error.
+#
+# ACCESSED GLOBAL VARIABLES:
+#    None
+# =============================================================================
+sub WaitForWinCr {
+   my($Code) = @_;
+   $Code = 0 unless ($Code);
+   
+   if ($^O =~ m/Win/i) {
+      unless (exists($ENV{'PROMPT'})) {
+         &ColorMsg("Press Enter key to exit.",'WHITE','');
+         chomp($guess = <STDIN>);
+      }
+   }
+   return $Code;
 }
